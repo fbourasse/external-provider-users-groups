@@ -85,5 +85,5 @@ public interface UserGroupProvider {
 
     List<JahiaPrincipal> getGroupMembers(String groupName);
 
-    List<JahiaGroup> getMembership(String userName);
+    List<String> getMembership(String userName);
 }
