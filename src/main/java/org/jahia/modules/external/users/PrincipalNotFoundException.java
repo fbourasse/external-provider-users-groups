@@ -71,25 +71,5 @@
  */
 package org.jahia.modules.external.users;
 
-import org.jahia.services.usermanager.JahiaGroup;
-import org.jahia.services.usermanager.JahiaPrincipal;
-import org.jahia.services.usermanager.JahiaUser;
-
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-
-public interface UserGroupProvider {
-
-    JahiaUser getUser(String name) throws UserNotFoundException;
-
-    boolean hasGroup(String name);
-
-    List<JahiaPrincipal> getGroupMembers(String groupName) throws PrincipalNotFoundException;
-
-    List<String> getMembership(String userName);
-
-    Set<JahiaUser> searchUsers(Properties searchCriterias);
-
-    Set<JahiaGroup> searchGroups(Properties searchCriterias);
+public class PrincipalNotFoundException extends Exception {
 }

@@ -71,25 +71,119 @@
  */
 package org.jahia.modules.external.users;
 
+import org.apache.commons.lang.StringUtils;
+import org.jahia.modules.external.ExternalData;
+import org.jahia.modules.external.ExternalDataSource;
+import org.jahia.modules.external.ExternalQuery;
 import org.jahia.services.usermanager.JahiaGroup;
-import org.jahia.services.usermanager.JahiaPrincipal;
-import org.jahia.services.usermanager.JahiaUser;
+import org.jahia.services.usermanager.JahiaUserManagerService;
 
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
+import javax.jcr.ItemNotFoundException;
+import javax.jcr.PathNotFoundException;
+import javax.jcr.RepositoryException;
+import java.util.*;
 
-public interface UserGroupProvider {
+public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.Searchable {
 
-    JahiaUser getUser(String name) throws UserNotFoundException;
+    private JahiaUserManagerService jahiaUserManagerService;
 
-    boolean hasGroup(String name);
+    private String providerKey;
 
-    List<JahiaPrincipal> getGroupMembers(String groupName) throws PrincipalNotFoundException;
+    private UsersDataSource usersDataSource;
 
-    List<String> getMembership(String userName);
+    private UserGroupProvider userGroupProvider;
 
-    Set<JahiaUser> searchUsers(Properties searchCriterias);
+    @Override
+    public List<String> getChildren(String path) throws RepositoryException {
+        return Collections.emptyList();
+    }
 
-    Set<JahiaGroup> searchGroups(Properties searchCriterias);
+    @Override
+    public ExternalData getItemByIdentifier(String identifier) throws ItemNotFoundException {
+        if (identifier.startsWith("/")) {
+            try {
+                return getItemByPath(identifier);
+            } catch (PathNotFoundException e) {
+                throw new ItemNotFoundException(identifier, e);
+            }
+        }
+        throw new ItemNotFoundException(identifier);
+    }
+
+    @Override
+    public ExternalData getItemByPath(String path) throws PathNotFoundException {
+        String groupName = StringUtils.substringAfterLast(path, "/");
+        if (!userGroupProvider.hasGroup(groupName)) {
+            throw new PathNotFoundException("Cannot find group " + path);
+        }
+        if (!path.equals("/" + groupName)) {
+            throw new PathNotFoundException("Cannot find group " + path);
+        }
+        return getGroupData(groupName);
+    }
+
+    @Override
+    public Set<String> getSupportedNodeTypes() {
+        return new HashSet(Arrays.asList("jnt:group", "jnt:members", "jnt:member"));
+    }
+
+    @Override
+    public boolean isSupportsHierarchicalIdentifiers() {
+        return true;
+    }
+
+    @Override
+    public boolean isSupportsUuid() {
+        return false;
+    }
+
+    @Override
+    public boolean itemExists(String path) {
+        String groupName = StringUtils.substringAfterLast(path, "/");
+        if (!userGroupProvider.hasGroup(groupName)) {
+            return false;
+        }
+        if (!path.equals("/" + groupName)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public List<String> search(ExternalQuery externalQuery) throws RepositoryException {
+        Properties searchCriterias = new Properties();
+        UsersDataSource.getCriteriasFromConstraints(externalQuery.getConstraint(), searchCriterias);
+        if (searchCriterias.isEmpty()) {
+            searchCriterias.put("*", "*");
+        }
+        List<String> result = new ArrayList<String>();
+        for (JahiaGroup group : userGroupProvider.searchGroups(searchCriterias)) {
+            result.add("/" + group.getName());
+        }
+        return result;
+    }
+
+    private ExternalData getGroupData(String groupName) {
+        String path = "/" + groupName;
+        Map<String,String[]> properties = new HashMap<String, String[]>();
+        properties.put("j:external", new String[] {"true"});
+        properties.put("j:externalSource", new String[] {providerKey});
+        return new ExternalData(path, path, "jnt:group", properties);
+    }
+
+    public void setJahiaUserManagerService(JahiaUserManagerService jahiaUserManagerService) {
+        this.jahiaUserManagerService = jahiaUserManagerService;
+    }
+
+    public void setProviderKey(String providerKey) {
+        this.providerKey = providerKey;
+    }
+
+    public void setUsersDataSource(UsersDataSource usersDataSource) {
+        this.usersDataSource = usersDataSource;
+    }
+
+    public void setUserGroupProvider(UserGroupProvider userGroupProvider) {
+        this.userGroupProvider = userGroupProvider;
+    }
 }
