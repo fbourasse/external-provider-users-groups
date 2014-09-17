@@ -73,7 +73,6 @@ package org.jahia.modules.external.users;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.commons.query.qom.Operator;
-import org.apache.jackrabbit.spi.commons.conversion.MalformedPathException;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
@@ -92,6 +91,8 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
 
     private JahiaUserManagerService jahiaUserManagerService;
 
+    private String mountPoint;
+
     private String providerKey;
 
     private UserGroupProvider userGroupProvider;
@@ -99,7 +100,7 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
     @Override
     public List<String> getChildren(String path) throws RepositoryException {
         if (path == null || path.indexOf('/') == -1) {
-            throw new MalformedPathException(path);
+            throw new PathNotFoundException(path);
         }
         if ("/".equals(path)) {
             Properties searchCriterias = new Properties();
@@ -107,7 +108,8 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
             return userGroupProvider.searchUsers(searchCriterias);
         }
         JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
-        if (path.equals(userSplittingRule.getPathForUsername(path.substring(path.lastIndexOf('/'))))) {
+        String[] pathSegments = StringUtils.split(path, '/');
+        if (pathSegments.length >= userSplittingRule.getNumberOfSegments() + 1) { // number of split folders + user name
             return Collections.emptyList();
         }
         HashSet<String> children = new HashSet<String>();
@@ -138,8 +140,19 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
 
     @Override
     public ExternalData getItemByPath(String path) throws PathNotFoundException {
+        if (path == null || path.indexOf('/') == -1) {
+            throw new PathNotFoundException(path);
+        }
+        String[] pathSegments = StringUtils.split(path, '/');
+        JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
+        if (pathSegments.length <= userSplittingRule.getNumberOfSegments()) {
+            return new ExternalData(path, path, "jnt:usersFolder", new HashMap<String, String[]>());
+        }
+        if (pathSegments.length >  userSplittingRule.getNumberOfSegments() + 1) { // number of split folders + user name
+            throw new PathNotFoundException(path);
+        }
         try {
-            ExternalData data = getUserData(userGroupProvider.getUser(StringUtils.substringAfterLast(path, "/")));
+            ExternalData data = getUserData(userGroupProvider.getUser(pathSegments[pathSegments.length - 1]));
             if (!path.equals(data.getPath())) {
                 throw new PathNotFoundException("Cannot find user " + path);
             }
@@ -151,7 +164,7 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
 
     @Override
     public Set<String> getSupportedNodeTypes() {
-        return Collections.singleton("jnt:user");
+        return new HashSet(Arrays.asList("jnt:user", "jnt:usersFolder"));
     }
 
     @Override
@@ -263,6 +276,18 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
 
     public void setJahiaUserManagerService(JahiaUserManagerService jahiaUserManagerService) {
         this.jahiaUserManagerService = jahiaUserManagerService;
+    }
+
+    public String getMountPoint() {
+        return mountPoint;
+    }
+
+    public void setMountPoint(String mountPoint) {
+        this.mountPoint = mountPoint;
+    }
+
+    public String getProviderKey() {
+        return providerKey;
     }
 
     public void setProviderKey(String providerKey) {

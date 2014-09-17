@@ -71,22 +71,25 @@
  */
 package org.jahia.modules.external.users;
 
-import org.jahia.services.usermanager.JahiaUser;
 
-import java.util.List;
-import java.util.Properties;
+public class Member {
 
-public interface UserGroupProvider {
+    public enum MemberType {USER, GROUP};
 
-    JahiaUser getUser(String name) throws UserNotFoundException;
+    private String name;
 
-    boolean groupExists(String name);
+    private MemberType type;
 
-    List<Member> getGroupMembers(String groupName);
+    public Member(String name, MemberType type) {
+        this.name = name;
+        this.type = type;
+    }
 
-    List<String> getMembership(String userName);
+    public String getName() {
+        return name;
+    }
 
-    List<String> searchUsers(Properties searchCriterias);
-
-    List<String> searchGroups(Properties searchCriterias);
+    public MemberType getType() {
+        return type;
+    }
 }
