@@ -73,6 +73,7 @@ package org.jahia.modules.external.users;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.commons.query.qom.Operator;
+import org.apache.jackrabbit.spi.commons.conversion.MalformedPathException;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
@@ -97,7 +98,30 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
 
     @Override
     public List<String> getChildren(String path) throws RepositoryException {
-        return Collections.emptyList();
+        if (path == null || path.indexOf('/') == -1) {
+            throw new MalformedPathException(path);
+        }
+        if ("/".equals(path)) {
+            Properties searchCriterias = new Properties();
+            searchCriterias.put("username", "*");
+            return userGroupProvider.searchUsers(searchCriterias);
+        }
+        JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
+        if (path.equals(userSplittingRule.getPathForUsername(path.substring(path.lastIndexOf('/'))))) {
+            return Collections.emptyList();
+        }
+        HashSet<String> children = new HashSet<String>();
+        Properties searchCriterias = new Properties();
+        searchCriterias.put("username", "*");
+        for (String user : userGroupProvider.searchUsers(searchCriterias)) {
+            String s = userSplittingRule.getPathForUsername(user);
+            s = StringUtils.removeStart(s, path + "/");
+            s = StringUtils.substringAfter(s, "/");
+            children.add(s);
+        }
+        List<String> l = new ArrayList<String>();
+        l.addAll(children);
+        return l;
     }
 
     @Override
@@ -164,13 +188,13 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
         }
         List<String> result = new ArrayList<String>();
         JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
-        for (JahiaUser user : userGroupProvider.searchUsers(searchCriterias)) {
-            result.add(userSplittingRule.getPathForUsername(user.getName()));
+        for (String userName : userGroupProvider.searchUsers(searchCriterias)) {
+            result.add(userSplittingRule.getPathForUsername(userName));
         }
         return result;
     }
 
-    protected static boolean getCriteriasFromConstraints(Constraint constraint, Properties searchCriterias) throws RepositoryException {
+    private boolean getCriteriasFromConstraints(Constraint constraint, Properties searchCriterias) throws RepositoryException {
         if (constraint instanceof And) {
             return getCriteriasFromConstraints(((And) constraint).getConstraint1(), searchCriterias) ||
                     getCriteriasFromConstraints(((And) constraint).getConstraint2(), searchCriterias);
@@ -204,6 +228,9 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
                         && ((LowerCase) operand1).getOperand() instanceof PropertyValue) {
                     key = ((PropertyValue) ((LowerCase) operand1).getOperand()).getPropertyName();
                 }
+                if ("j:nodename".equals(key)) {
+                    key = "username";
+                }
                 if (key != null && operand2 instanceof Literal) {
                     searchCriterias.put(key, getCriteriaValue(((Literal) operand2).getLiteralValue().getString()));
                 }
@@ -212,7 +239,7 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
         return false;
     }
 
-    protected static String getCriteriaValue(String comparisonValue) {
+    private String getCriteriaValue(String comparisonValue) {
         if ("%".equals(comparisonValue)) {
             return "*";
         } else if (comparisonValue.indexOf("%") == comparisonValue.length() - 1) {
@@ -227,10 +254,10 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
         Map<String,String[]> properties = new HashMap<String, String[]>();
         Properties userProperties = user.getProperties();
         for (Object key : userProperties.keySet()) {
-            properties.put((String) key, new String[] {(String) userProperties.get(key)});
+            properties.put((String) key, new String[]{(String) userProperties.get(key)});
         }
-        properties.put("j:external", new String[] {"true"});
-        properties.put("j:externalSource", new String[] {providerKey});
+        properties.put("j:external", new String[]{"true"});
+        properties.put("j:externalSource", new String[]{providerKey});
         return new ExternalData(path, path, "jnt:user", properties);
     }
 

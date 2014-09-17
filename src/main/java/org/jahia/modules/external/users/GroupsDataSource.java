@@ -71,19 +71,26 @@
  */
 package org.jahia.modules.external.users;
 
+import com.ctc.wstx.util.StringUtil;
 import org.apache.commons.lang.StringUtils;
+import org.apache.jackrabbit.commons.query.qom.Operator;
+import org.apache.jackrabbit.spi.commons.conversion.MalformedPathException;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
-import org.jahia.services.usermanager.JahiaGroup;
 import org.jahia.services.usermanager.JahiaUserManagerService;
+import org.jahia.services.usermanager.JahiaUserSplittingRule;
+import org.jahia.utils.Patterns;
 
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
+import javax.jcr.query.qom.*;
 import java.util.*;
 
 public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.Searchable {
+
+    public static final String MEMBERS_ROOT_NAME = "j:members";
 
     private JahiaUserManagerService jahiaUserManagerService;
 
@@ -95,7 +102,36 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
 
     @Override
     public List<String> getChildren(String path) throws RepositoryException {
-        return Collections.emptyList();
+        if (path == null || path.indexOf('/') == -1) {
+            throw new MalformedPathException(path);
+        }
+        if ("/".equals(path)) {
+            Properties searchCriterias = new Properties();
+            searchCriterias.put("groupname", "*");
+            return userGroupProvider.searchGroups(searchCriterias);
+        }
+        String[] pathSegments = StringUtils.split(path, '/');
+        if (pathSegments.length == 1) {
+            return Arrays.asList(MEMBERS_ROOT_NAME);
+        }
+        if (!MEMBERS_ROOT_NAME.equals(pathSegments[1])) {
+            throw new PathNotFoundException(path);
+        }
+        String memberPath = StringUtils.substringAfter(path, "/" + MEMBERS_ROOT_NAME);
+        JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
+        if (pathSegments.length > 2 && memberPath.equals(userSplittingRule.getPathForUsername(pathSegments[pathSegments.length - 1]))) {
+            return Collections.emptyList();
+        }
+        HashSet<String> children = new HashSet<String>();
+        for (String member : userGroupProvider.getGroupMembers(pathSegments[0])) {
+            String s = userSplittingRule.getPathForUsername(member);
+            s = StringUtils.removeStart(s, memberPath + "/");
+            s = StringUtils.substringAfter(s, "/");
+            children.add(s);
+        }
+        List<String> l = new ArrayList<String>();
+        l.addAll(children);
+        return l;
     }
 
     @Override
@@ -113,7 +149,7 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
     @Override
     public ExternalData getItemByPath(String path) throws PathNotFoundException {
         String groupName = StringUtils.substringAfterLast(path, "/");
-        if (!userGroupProvider.hasGroup(groupName)) {
+        if (!userGroupProvider.groupExists(groupName)) {
             throw new PathNotFoundException("Cannot find group " + path);
         }
         if (!path.equals("/" + groupName)) {
@@ -140,7 +176,7 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
     @Override
     public boolean itemExists(String path) {
         String groupName = StringUtils.substringAfterLast(path, "/");
-        if (!userGroupProvider.hasGroup(groupName)) {
+        if (!userGroupProvider.groupExists(groupName)) {
             return false;
         }
         if (!path.equals("/" + groupName)) {
@@ -152,22 +188,77 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
     @Override
     public List<String> search(ExternalQuery externalQuery) throws RepositoryException {
         Properties searchCriterias = new Properties();
-        UsersDataSource.getCriteriasFromConstraints(externalQuery.getConstraint(), searchCriterias);
+        getCriteriasFromConstraints(externalQuery.getConstraint(), searchCriterias);
         if (searchCriterias.isEmpty()) {
             searchCriterias.put("*", "*");
         }
         List<String> result = new ArrayList<String>();
-        for (JahiaGroup group : userGroupProvider.searchGroups(searchCriterias)) {
-            result.add("/" + group.getName());
+        for (String groupName : userGroupProvider.searchGroups(searchCriterias)) {
+            result.add("/" + groupName);
         }
         return result;
     }
 
+    private boolean getCriteriasFromConstraints(Constraint constraint, Properties searchCriterias) throws RepositoryException {
+        if (constraint instanceof And) {
+            return getCriteriasFromConstraints(((And) constraint).getConstraint1(), searchCriterias) ||
+                    getCriteriasFromConstraints(((And) constraint).getConstraint2(), searchCriterias);
+        } else if (constraint instanceof Or) {
+            Constraint constraint1 = ((Or) constraint).getConstraint1();
+            Constraint constraint2 = ((Or) constraint).getConstraint2();
+            if (constraint1 instanceof FullTextSearch
+                    && ((FullTextSearch) constraint1).getPropertyName() == null
+                    && constraint2 instanceof Comparison
+                    && Operator.LIKE.equals(((Comparison) constraint2).getOperator())
+                    && ((Comparison) constraint2).getOperand1() instanceof LowerCase
+                    && ((LowerCase) ((Comparison) constraint2).getOperand1()).getOperand() instanceof PropertyValue
+                    && "j:nodename".equals(((PropertyValue) ((LowerCase) ((Comparison) constraint2).getOperand1()).getOperand()).getPropertyName())
+                    && ((Comparison) constraint2).getOperand2() instanceof Literal) {
+                searchCriterias.put("*", getCriteriaValue(((Literal) ((Comparison) constraint2).getOperand2()).getLiteralValue().getString()));
+                return false;
+            } else {
+                getCriteriasFromConstraints(constraint1, searchCriterias);
+                getCriteriasFromConstraints(constraint2, searchCriterias);
+                return true;
+            }
+        } else if (constraint instanceof Comparison) {
+            String operator = ((Comparison) constraint).getOperator();
+            DynamicOperand operand1 = ((Comparison) constraint).getOperand1();
+            StaticOperand operand2 = ((Comparison) constraint).getOperand2();
+            if (Operator.LIKE.equals(operator)) {
+                String key = null;
+                if (operand1 instanceof PropertyValue) {
+                    key = ((PropertyValue) operand1).getPropertyName();
+                } else if (operand1 instanceof LowerCase
+                        && ((LowerCase) operand1).getOperand() instanceof PropertyValue) {
+                    key = ((PropertyValue) ((LowerCase) operand1).getOperand()).getPropertyName();
+                }
+                if ("j:nodename".equals(key)) {
+                    key = "groupname";
+                }
+                if (key != null && operand2 instanceof Literal) {
+                    searchCriterias.put(key, getCriteriaValue(((Literal) operand2).getLiteralValue().getString()));
+                }
+            }
+        }
+        return false;
+    }
+
+    private String getCriteriaValue(String comparisonValue) {
+        if ("%".equals(comparisonValue)) {
+            return "*";
+        } else if (comparisonValue.indexOf("%") == comparisonValue.length() - 1) {
+            return comparisonValue.substring(0, comparisonValue.length() - 1);
+        } else {
+            return Patterns.PERCENT.matcher(comparisonValue).replaceAll("*");
+        }
+    }
+
     private ExternalData getGroupData(String groupName) {
         String path = "/" + groupName;
-        Map<String,String[]> properties = new HashMap<String, String[]>();
-        properties.put("j:external", new String[] {"true"});
-        properties.put("j:externalSource", new String[] {providerKey});
+        Map<String, String[]> properties = new HashMap<String, String[]>();
+        properties.put("j:external", new String[]{"true"});
+        properties.put("j:externalSource", new String[]{providerKey});
         return new ExternalData(path, path, "jnt:group", properties);
     }
 

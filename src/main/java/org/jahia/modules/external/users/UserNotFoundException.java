@@ -71,5 +71,5 @@
  */
 package org.jahia.modules.external.users;
 
-public class UserNotFoundException extends PrincipalNotFoundException {
+public class UserNotFoundException extends Exception {
 }
