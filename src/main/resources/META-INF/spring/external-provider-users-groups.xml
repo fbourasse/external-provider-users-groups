@@ -5,7 +5,6 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
                         http://www.eclipse.org/gemini/blueprint/schema/blueprint http://www.eclipse.org/gemini/blueprint/schema/blueprint/gemini-blueprint.xsd">
 
-
   <osgi:reference id="ExternalProviderInitializerService" interface="org.jahia.modules.external.ExternalProviderInitializerService"/>
 
   <bean id="UsersDataSourcePrototype" class="org.jahia.modules.external.users.UsersDataSource"
@@ -18,5 +17,11 @@
     <property name="jahiaUserManagerService" ref="JahiaUserManagerService"/>
     <property name="externalProviderInitializerService" ref="ExternalProviderInitializerService"/>
   </bean>
+
+  <bean id="ExternalUserGroupServiceImpl" class="org.jahia.modules.external.users.ExternalUserGroupServiceImpl">
+    <property name="jcrStoreService" ref="JCRStoreService"/>
+  </bean>
+
+  <osgi:service id="ExternalUserGroupService" ref="ExternalUserGroupServiceImpl" interface="org.jahia.modules.external.users.ExternalUserGroupService"/>
 
 </beans>

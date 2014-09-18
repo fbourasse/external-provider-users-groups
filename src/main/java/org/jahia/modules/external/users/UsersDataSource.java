@@ -278,7 +278,7 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
         this.jahiaUserManagerService = jahiaUserManagerService;
     }
 
-    public String getMountPoint() {
+    protected String getMountPoint() {
         return mountPoint;
     }
 
@@ -286,7 +286,7 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
         this.mountPoint = mountPoint;
     }
 
-    public String getProviderKey() {
+    protected String getProviderKey() {
         return providerKey;
     }
 
