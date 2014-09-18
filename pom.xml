@@ -87,8 +87,9 @@
     <description>This is the custom module (Jahia External Provider Users and Groups) for running on a Digital Factory server.</description>
 
     <scm>
-        <connection>scm:dummy:uri</connection>
-        <developerConnection>scm:dummy:uri</developerConnection>
+      <connection>scm:git:git@github.com:Jahia/external-provider-users-groups.git</connection>
+      <developerConnection>scm:git:git@github.com:Jahia/external-provider-users-groups.git</developerConnection>
+      <url>https://github.com/Jahia/external-provider-users-groups</url>
     </scm>
 
     <dependencies>
