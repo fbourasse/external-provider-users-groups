@@ -75,10 +75,13 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.commons.query.qom.Operator;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
+import org.jahia.modules.external.ExternalProviderInitializerService;
 import org.jahia.modules.external.ExternalQuery;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.services.usermanager.JahiaUserSplittingRule;
 import org.jahia.utils.Patterns;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
@@ -88,9 +91,13 @@ import java.util.*;
 
 public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.Searchable {
 
+    private static final Logger logger = LoggerFactory.getLogger(GroupsDataSource.class);
+
     public static final String MEMBERS_ROOT_NAME = "j:members";
 
     private JahiaUserManagerService jahiaUserManagerService;
+
+    private ExternalProviderInitializerService externalProviderInitializerService;
 
     private String mountPoint;
 
@@ -178,23 +185,23 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         if (!MEMBERS_ROOT_NAME.equals(pathSegments[1])) {
             throw new PathNotFoundException(path);
         }
-        String memberPathBase = StringUtils.substringAfter(path, "/" + MEMBERS_ROOT_NAME);
+        String memberPath = StringUtils.substringAfter(path, "/" + MEMBERS_ROOT_NAME);
         JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
         String memberUserPrefix = usersDataSource.getMountPoint() + "/" + usersDataSource.getProviderKey();
         String memberGroupPrefix = mountPoint + "/" + providerKey;
-        String userPath = StringUtils.substringAfter(memberPathBase, memberUserPrefix);
-        String groupPath = StringUtils.substringAfter(memberPathBase, memberGroupPrefix);
+        String userPath = StringUtils.substringAfter(memberPath, memberUserPrefix);
+        String groupPath = StringUtils.substringAfter(memberPath, memberGroupPrefix);
         if (StringUtils.isNotBlank(userPath)) {
             int nbrOfUserPathSegments = StringUtils.split(userPath, '/').length;
             if (nbrOfUserPathSegments == userSplittingRule.getNumberOfSegments() + 1) { // member user path
-                 return getMemberData(path, userPath);
+                 return getMemberData(path, memberPath, usersDataSource.getProviderKey());
             } else if (nbrOfUserPathSegments > userSplittingRule.getNumberOfSegments() + 1) { // path too long
                 throw new PathNotFoundException(path);
             }
         }
         if (StringUtils.isNotBlank(groupPath)) {
             if (StringUtils.split(groupPath, '/').length == 1) { // member group path
-                return getMemberData(path, userPath);
+                return getMemberData(path, memberPath, providerKey);
             } else { // path too long
                 throw new PathNotFoundException(path);
             }
@@ -202,9 +209,13 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         return new ExternalData(path, path, "jnt:members", new HashMap<String, String[]>());
     }
 
-    private ExternalData getMemberData(String path, String refPath) {
+    private ExternalData getMemberData(String path, String refPath, String providerKey) {
         HashMap<String, String[]> properties = new HashMap<String, String[]>();
-        // TODO: add j:member
+        try {
+            properties.put("j:member", new String[]{externalProviderInitializerService.getInternalIdentifier(refPath, providerKey)});
+        } catch (RepositoryException e) {
+            logger.error("Failed to get UUID for member " + refPath, e);
+        }
         return new ExternalData(path, path, "jnt:member", properties);
     }
 
@@ -314,6 +325,10 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
 
     public void setJahiaUserManagerService(JahiaUserManagerService jahiaUserManagerService) {
         this.jahiaUserManagerService = jahiaUserManagerService;
+    }
+
+    public void setExternalProviderInitializerService(ExternalProviderInitializerService externalProviderInitializerService) {
+        this.externalProviderInitializerService = externalProviderInitializerService;
     }
 
     public String getMountPoint() {
