@@ -152,8 +152,6 @@ public class SearchCriteriaHelper {
     private static String getLikeComparisonValue(String comparisonValue) {
         if ("%".equals(comparisonValue)) {
             return "*";
-        } else if (comparisonValue.indexOf("%") == comparisonValue.length() - 1) {
-            return comparisonValue.substring(0, comparisonValue.length() - 1);
         } else {
             return Patterns.PERCENT.matcher(comparisonValue).replaceAll("*");
         }
