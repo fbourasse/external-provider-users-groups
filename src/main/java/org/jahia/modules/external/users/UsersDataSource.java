@@ -73,6 +73,7 @@ package org.jahia.modules.external.users;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.commons.query.qom.Operator;
+import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
@@ -91,11 +92,9 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
 
     private JahiaUserManagerService jahiaUserManagerService;
 
-    private String mountPoint;
-
-    private String providerKey;
-
     private UserGroupProvider userGroupProvider;
+
+    private ExternalContentStoreProvider contentStoreProvider;
 
     @Override
     public List<String> getChildren(String path) throws RepositoryException {
@@ -207,7 +206,7 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
             properties.put((String) key, new String[]{(String) userProperties.get(key)});
         }
         properties.put("j:external", new String[]{"true"});
-        properties.put("j:externalSource", new String[]{providerKey});
+        properties.put("j:externalSource", new String[]{contentStoreProvider.getKey()});
         return new ExternalData(path, path, "jnt:user", properties);
     }
 
@@ -215,23 +214,15 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
         this.jahiaUserManagerService = jahiaUserManagerService;
     }
 
-    protected String getMountPoint() {
-        return mountPoint;
-    }
-
-    public void setMountPoint(String mountPoint) {
-        this.mountPoint = mountPoint;
-    }
-
-    protected String getProviderKey() {
-        return providerKey;
-    }
-
-    public void setProviderKey(String providerKey) {
-        this.providerKey = providerKey;
-    }
-
     public void setUserGroupProvider(UserGroupProvider userGroupProvider) {
         this.userGroupProvider = userGroupProvider;
+    }
+
+    public ExternalContentStoreProvider getContentStoreProvider() {
+        return contentStoreProvider;
+    }
+
+    public void setContentStoreProvider(ExternalContentStoreProvider contentStoreProvider) {
+        this.contentStoreProvider = contentStoreProvider;
     }
 }

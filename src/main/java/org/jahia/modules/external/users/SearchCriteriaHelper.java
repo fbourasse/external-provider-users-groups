@@ -102,7 +102,7 @@ public class SearchCriteriaHelper {
             if (constraint1 instanceof FullTextSearch
                     && ((FullTextSearch) constraint1).getPropertyName() == null
                     && constraint2 instanceof Comparison
-                    && Operator.LIKE.equals(((Comparison) constraint2).getOperator())
+                    && Operator.LIKE.toString().equals(((Comparison) constraint2).getOperator())
                     && ((Comparison) constraint2).getOperand1() instanceof LowerCase
                     && ((LowerCase) ((Comparison) constraint2).getOperand1()).getOperand() instanceof PropertyValue
                     && "j:nodename".equals(((PropertyValue) ((LowerCase) ((Comparison) constraint2).getOperand1()).getOperand()).getPropertyName())

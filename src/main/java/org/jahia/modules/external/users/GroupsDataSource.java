@@ -73,10 +73,7 @@ package org.jahia.modules.external.users;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.commons.query.qom.Operator;
-import org.jahia.modules.external.ExternalData;
-import org.jahia.modules.external.ExternalDataSource;
-import org.jahia.modules.external.ExternalProviderInitializerService;
-import org.jahia.modules.external.ExternalQuery;
+import org.jahia.modules.external.*;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.services.usermanager.JahiaUserSplittingRule;
 import org.jahia.utils.Patterns;
@@ -97,15 +94,11 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
 
     private JahiaUserManagerService jahiaUserManagerService;
 
-    private ExternalProviderInitializerService externalProviderInitializerService;
-
-    private String mountPoint;
-
-    private String providerKey;
-
     private UsersDataSource usersDataSource;
 
     private UserGroupProvider userGroupProvider;
+
+    private ExternalContentStoreProvider contentStoreProvider;
 
     @Override
     public List<String> getChildren(String path) throws RepositoryException {
@@ -126,8 +119,8 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         }
         String memberPathBase = StringUtils.substringAfter(path, "/" + MEMBERS_ROOT_NAME);
         JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
-        String userPath = StringUtils.substringAfter(memberPathBase, usersDataSource.getMountPoint());
-        String groupPath = StringUtils.substringAfter(memberPathBase, mountPoint);
+        String userPath = StringUtils.substringAfter(memberPathBase, usersDataSource.getContentStoreProvider().getMountPoint());
+        String groupPath = StringUtils.substringAfter(memberPathBase, contentStoreProvider.getMountPoint());
         if (StringUtils.isNotBlank(userPath) && StringUtils.split(userPath, '/').length >= userSplittingRule.getNumberOfSegments() + 1) { // split folders + user name
             // path is for member user node or subnode
             return Collections.emptyList();
@@ -140,9 +133,9 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         for (Member member : userGroupProvider.getGroupMembers(pathSegments[0])) {
             String memberPath;
             if (member.getType() == Member.MemberType.GROUP) {
-                memberPath = mountPoint + "/" + member.getName();
+                memberPath = contentStoreProvider.getMountPoint() + "/" + member.getName();
             } else {
-                memberPath = usersDataSource.getMountPoint() + userSplittingRule.getRelativePathForUsername(member.getName());
+                memberPath = usersDataSource.getContentStoreProvider().getMountPoint() + userSplittingRule.getRelativePathForUsername(member.getName());
             }
             if (memberPath.startsWith(memberPathBase)) {
                 memberPath = StringUtils.removeStart(memberPath, memberPathBase + "/");
@@ -190,12 +183,12 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         }
         String memberPath = StringUtils.substringAfter(path, "/" + MEMBERS_ROOT_NAME);
         JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
-        String userPath = StringUtils.substringAfter(memberPath, usersDataSource.getMountPoint());
-        String groupPath = StringUtils.substringAfter(memberPath, mountPoint);
+        String userPath = StringUtils.substringAfter(memberPath, usersDataSource.getContentStoreProvider().getMountPoint());
+        String groupPath = StringUtils.substringAfter(memberPath, contentStoreProvider.getMountPoint());
         if (StringUtils.isNotBlank(userPath)) {
             int nbrOfUserPathSegments = StringUtils.split(userPath, '/').length;
             if (nbrOfUserPathSegments == userSplittingRule.getNumberOfSegments() + 1) { // member user path
-                 return getMemberData(path, userPath, usersDataSource.getProviderKey());
+                 return getMemberData(path, userPath, usersDataSource.getContentStoreProvider());
             } else if (nbrOfUserPathSegments < userSplittingRule.getNumberOfSegments() + 1) { // split folder
                 return new ExternalData(path, path, "jnt:members", new HashMap<String, String[]>());
             } else { // path too long
@@ -204,7 +197,7 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         }
         if (StringUtils.isNotBlank(groupPath)) {
             if (StringUtils.split(groupPath, '/').length == 1) { // member group path
-                return getMemberData(path, groupPath, providerKey);
+                return getMemberData(path, groupPath, contentStoreProvider);
             } else { // path too long
                 throw new PathNotFoundException(path);
             }
@@ -212,10 +205,10 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         return new ExternalData(path, path, "jnt:members", new HashMap<String, String[]>());
     }
 
-    private ExternalData getMemberData(String path, String refPath, String providerKey) {
+    private ExternalData getMemberData(String path, String refPath, ExternalContentStoreProvider provider) {
         HashMap<String, String[]> properties = new HashMap<String, String[]>();
         try {
-            properties.put("j:member", new String[]{externalProviderInitializerService.getInternalIdentifier(refPath, providerKey)});
+            properties.put("j:member", new String[]{provider.getOrCreateInternalIdentifier(refPath)});
         } catch (RepositoryException e) {
             logger.error("Failed to get UUID for member " + refPath, e);
         }
@@ -262,24 +255,12 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         String path = "/" + groupName;
         Map<String, String[]> properties = new HashMap<String, String[]>();
         properties.put("j:external", new String[]{"true"});
-        properties.put("j:externalSource", new String[]{providerKey});
+        properties.put("j:externalSource", new String[]{contentStoreProvider.getKey()});
         return new ExternalData(path, path, "jnt:group", properties);
     }
 
     public void setJahiaUserManagerService(JahiaUserManagerService jahiaUserManagerService) {
         this.jahiaUserManagerService = jahiaUserManagerService;
-    }
-
-    public void setExternalProviderInitializerService(ExternalProviderInitializerService externalProviderInitializerService) {
-        this.externalProviderInitializerService = externalProviderInitializerService;
-    }
-
-    public void setMountPoint(String mountPoint) {
-        this.mountPoint = mountPoint;
-    }
-
-    public void setProviderKey(String providerKey) {
-        this.providerKey = providerKey;
     }
 
     public void setUsersDataSource(UsersDataSource usersDataSource) {
@@ -288,5 +269,13 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
 
     public void setUserGroupProvider(UserGroupProvider userGroupProvider) {
         this.userGroupProvider = userGroupProvider;
+    }
+
+    public ExternalContentStoreProvider getContentStoreProvider() {
+        return contentStoreProvider;
+    }
+
+    public void setContentStoreProvider(ExternalContentStoreProvider contentStoreProvider) {
+        this.contentStoreProvider = contentStoreProvider;
     }
 }

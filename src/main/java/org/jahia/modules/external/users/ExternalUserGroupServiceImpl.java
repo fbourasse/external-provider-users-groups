@@ -127,44 +127,30 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
         Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
         if (providers.get(userProviderKey) == null && providers.get(groupProviderKey) == null) {
             try {
-                String userMountPoint = usersFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey;
                 UsersDataSource usersDataSource = (UsersDataSource) SpringContextSingleton.getBeanInModulesContext("UsersDataSourcePrototype");
-                Map<String, Object> properties = new LinkedHashMap<String, Object>();
-                properties.put("providerKey", userProviderKey);
-                properties.put("mountPoint", userMountPoint);
-                properties.put("userGroupProvider", userGroupProvider);
-                BeanUtils.populate(usersDataSource, properties);
+                usersDataSource.setUserGroupProvider(userGroupProvider);
 
                 ExternalContentStoreProvider userProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
-                properties.clear();
-                properties.put("key", userProviderKey);
-                properties.put("mountPoint", userMountPoint);
-                properties.put("dataSource", usersDataSource);
-                BeanUtils.populate(userProvider, properties);
+                userProvider.setKey(userProviderKey);
+                userProvider.setMountPoint(usersFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
+                userProvider.setDataSource(usersDataSource);
 
-                String groupMountPoint = groupsFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey;
+                usersDataSource.setContentStoreProvider(userProvider);
+
                 GroupsDataSource groupDataSource = (GroupsDataSource) SpringContextSingleton.getBeanInModulesContext("GroupsDataSourcePrototype");
-                properties.clear();
-                properties.put("providerKey", groupProviderKey);
-                properties.put("mountPoint", groupMountPoint);
-                properties.put("usersDataSource", usersDataSource);
-                properties.put("userGroupProvider", userGroupProvider);
-                BeanUtils.populate(groupDataSource, properties);
+                groupDataSource.setUsersDataSource(usersDataSource);
+                groupDataSource.setUserGroupProvider(userGroupProvider);
 
                 ExternalContentStoreProvider groupProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
-                properties.clear();
-                properties.put("key", groupProviderKey);
-                properties.put("mountPoint", groupMountPoint);
-                properties.put("dataSource", groupDataSource);
-                BeanUtils.populate(groupProvider, properties);
+                groupProvider.setKey(groupProviderKey);
+                groupProvider.setMountPoint(groupsFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
+                groupProvider.setDataSource(groupDataSource);
+
+                groupDataSource.setContentStoreProvider(groupProvider);
 
                 userProvider.start();
                 groupProvider.start();
-            } catch (InvocationTargetException e) {
-                logger.error(e.getMessage(), e);
             } catch (JahiaInitializationException e) {
-                logger.error(e.getMessage(), e);
-            } catch (IllegalAccessException e) {
                 logger.error(e.getMessage(), e);
             }
         }
