@@ -160,7 +160,7 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
 
     @Override
     public Set<String> getSupportedNodeTypes() {
-        return new HashSet(Arrays.asList("jnt:user", "jnt:usersFolder"));
+        return new HashSet(Arrays.asList("jnt:externalUser", "jnt:usersFolder"));
     }
 
     @Override
@@ -207,11 +207,15 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
         }
         properties.put("j:external", new String[]{"true"});
         properties.put("j:externalSource", new String[]{contentStoreProvider.getKey()});
-        return new ExternalData(path, path, "jnt:user", properties);
+        return new ExternalData(path, path, "jnt:externalUser", properties);
     }
 
     public void setJahiaUserManagerService(JahiaUserManagerService jahiaUserManagerService) {
         this.jahiaUserManagerService = jahiaUserManagerService;
+    }
+
+    public UserGroupProvider getUserGroupProvider() {
+        return userGroupProvider;
     }
 
     public void setUserGroupProvider(UserGroupProvider userGroupProvider) {

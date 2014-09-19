@@ -21,4 +21,11 @@
 
   <osgi:service id="ExternalUserGroupService" ref="ExternalUserGroupServiceImpl" interface="org.jahia.modules.external.users.ExternalUserGroupService"/>
 
+  <bean class="org.jahia.services.content.decorator.JCRNodeDecoratorDefinition">
+    <property name="decorators">
+      <map>
+        <entry key="jnt:externalUser" value="org.jahia.modules.external.users.JCRExternalUserNode"/>
+      </map>
+    </property>
+  </bean>
 </beans>
