@@ -75,12 +75,11 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.services.SpringContextSingleton;
-import org.jahia.services.content.JCRSessionFactory;
-import org.jahia.services.content.JCRStoreProvider;
-import org.jahia.services.content.JCRStoreService;
+import org.jahia.services.content.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jcr.RepositoryException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -89,18 +88,49 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
     private static final Logger logger = LoggerFactory.getLogger(ExternalUserGroupServiceImpl.class);
 
+    private static final String PROVIDERS_MOUNT_CONTAINER = "providers";
+
     private JCRStoreService jcrStoreService;
 
     public void register(String providerKey, UserGroupProvider userGroupProvider) {
+        final String usersFolderPath = "/users";
+        final String groupsFolderPath = "/groups";
+
+        try {
+            JCRTemplate.getInstance().doExecuteWithSystemSession(new JCRCallback<Object>() {
+                @Override
+                public Object doInJCR(JCRSessionWrapper session) throws RepositoryException {
+                    boolean saveNeeded = false;
+                    JCRNodeWrapper node = session.getNode(usersFolderPath);
+                    if (!node.hasNode(PROVIDERS_MOUNT_CONTAINER)) {
+                        node.addNode(PROVIDERS_MOUNT_CONTAINER, "jnt:usersFolder");
+                        saveNeeded = true;
+                    }
+                    node = session.getNode(groupsFolderPath);
+                    if (!node.hasNode(PROVIDERS_MOUNT_CONTAINER)) {
+                        node.addNode(PROVIDERS_MOUNT_CONTAINER, "jnt:groupsFolder");
+                        saveNeeded = true;
+                    }
+                    if (saveNeeded) {
+                        session.save();
+                    }
+                    return null;
+                }
+            });
+        } catch (RepositoryException e) {
+            logger.error("Failed to create providers mount containers", e);
+            return;
+        }
+
         String userProviderKey = providerKey + "-users";
         String groupProviderKey = providerKey + "-groups";
         Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
         if (providers.get(userProviderKey) == null && providers.get(groupProviderKey) == null) {
             try {
-                String userMountPoint = "/users/providers/" + providerKey;
+                String userMountPoint = usersFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey;
                 UsersDataSource usersDataSource = (UsersDataSource) SpringContextSingleton.getBeanInModulesContext("UsersDataSourcePrototype");
                 Map<String, Object> properties = new LinkedHashMap<String, Object>();
-                properties.put("key", userProviderKey);
+                properties.put("providerKey", userProviderKey);
                 properties.put("mountPoint", userMountPoint);
                 properties.put("userGroupProvider", userGroupProvider);
                 BeanUtils.populate(usersDataSource, properties);
@@ -112,10 +142,10 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
                 properties.put("dataSource", usersDataSource);
                 BeanUtils.populate(userProvider, properties);
 
-                String groupMountPoint = "/groups/providers/" + providerKey;
+                String groupMountPoint = groupsFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey;
                 GroupsDataSource groupDataSource = (GroupsDataSource) SpringContextSingleton.getBeanInModulesContext("GroupsDataSourcePrototype");
                 properties.clear();
-                properties.put("key", groupProviderKey);
+                properties.put("providerKey", groupProviderKey);
                 properties.put("mountPoint", groupMountPoint);
                 properties.put("usersDataSource", usersDataSource);
                 properties.put("userGroupProvider", userGroupProvider);

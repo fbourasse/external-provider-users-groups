@@ -142,11 +142,13 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
             if (member.getType() == Member.MemberType.GROUP) {
                 memberPath = mountPoint + "/" + member.getName();
             } else {
-                memberPath = usersDataSource.getMountPoint() + userSplittingRule.getPathForUsername(member.getName());
+                memberPath = usersDataSource.getMountPoint() + userSplittingRule.getRelativePathForUsername(member.getName());
             }
-            memberPath = StringUtils.removeStart(memberPath, memberPathBase + "/");
-            memberPath = StringUtils.substringAfter(memberPath, "/");
-            children.add(memberPath);
+            if (memberPath.startsWith(memberPathBase)) {
+                memberPath = StringUtils.removeStart(memberPath, memberPathBase + "/");
+                memberPath = StringUtils.substringBefore(memberPath, "/");
+                children.add(memberPath);
+            }
         }
         List<String> l = new ArrayList<String>();
         l.addAll(children);
@@ -170,6 +172,9 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         if (path == null || path.indexOf('/') == -1) {
             throw new PathNotFoundException(path);
         }
+        if ("/".equals(path)) {
+            return new ExternalData(path, path, "jnt:groupsFolder", new HashMap<String, String[]>());
+        }
         String[] pathSegments = StringUtils.split(path, '/');
         if (pathSegments.length == 1) {
             if (!userGroupProvider.groupExists(pathSegments[0])) {
@@ -190,7 +195,7 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         if (StringUtils.isNotBlank(userPath)) {
             int nbrOfUserPathSegments = StringUtils.split(userPath, '/').length;
             if (nbrOfUserPathSegments == userSplittingRule.getNumberOfSegments() + 1) { // member user path
-                 return getMemberData(path, memberPath, usersDataSource.getProviderKey());
+                 return getMemberData(path, userPath, usersDataSource.getProviderKey());
             } else if (nbrOfUserPathSegments < userSplittingRule.getNumberOfSegments() + 1) { // split folder
                 return new ExternalData(path, path, "jnt:members", new HashMap<String, String[]>());
             } else { // path too long
@@ -199,7 +204,7 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         }
         if (StringUtils.isNotBlank(groupPath)) {
             if (StringUtils.split(groupPath, '/').length == 1) { // member group path
-                return getMemberData(path, memberPath, providerKey);
+                return getMemberData(path, groupPath, providerKey);
             } else { // path too long
                 throw new PathNotFoundException(path);
             }
@@ -234,11 +239,9 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
 
     @Override
     public boolean itemExists(String path) {
-        String groupName = StringUtils.substringAfterLast(path, "/");
-        if (!userGroupProvider.groupExists(groupName)) {
-            return false;
-        }
-        if (!path.equals("/" + groupName)) {
+        try {
+            getItemByPath(path);
+        } catch (PathNotFoundException e) {
             return false;
         }
         return true;
@@ -247,70 +250,12 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
     @Override
     public List<String> search(ExternalQuery externalQuery) throws RepositoryException {
         Properties searchCriterias = new Properties();
-        getCriteriasFromConstraints(externalQuery.getConstraint(), searchCriterias);
-        if (searchCriterias.isEmpty()) {
-            searchCriterias.put("*", "*");
-        }
+        SearchCriteriaHelper.getCriteriasFromConstraints(externalQuery.getConstraint(), searchCriterias, "groupname");
         List<String> result = new ArrayList<String>();
         for (String groupName : userGroupProvider.searchGroups(searchCriterias)) {
             result.add("/" + groupName);
         }
         return result;
-    }
-
-    private boolean getCriteriasFromConstraints(Constraint constraint, Properties searchCriterias) throws RepositoryException {
-        if (constraint instanceof And) {
-            return getCriteriasFromConstraints(((And) constraint).getConstraint1(), searchCriterias) ||
-                    getCriteriasFromConstraints(((And) constraint).getConstraint2(), searchCriterias);
-        } else if (constraint instanceof Or) {
-            Constraint constraint1 = ((Or) constraint).getConstraint1();
-            Constraint constraint2 = ((Or) constraint).getConstraint2();
-            if (constraint1 instanceof FullTextSearch
-                    && ((FullTextSearch) constraint1).getPropertyName() == null
-                    && constraint2 instanceof Comparison
-                    && Operator.LIKE.equals(((Comparison) constraint2).getOperator())
-                    && ((Comparison) constraint2).getOperand1() instanceof LowerCase
-                    && ((LowerCase) ((Comparison) constraint2).getOperand1()).getOperand() instanceof PropertyValue
-                    && "j:nodename".equals(((PropertyValue) ((LowerCase) ((Comparison) constraint2).getOperand1()).getOperand()).getPropertyName())
-                    && ((Comparison) constraint2).getOperand2() instanceof Literal) {
-                searchCriterias.put("*", getCriteriaValue(((Literal) ((Comparison) constraint2).getOperand2()).getLiteralValue().getString()));
-                return false;
-            } else {
-                getCriteriasFromConstraints(constraint1, searchCriterias);
-                getCriteriasFromConstraints(constraint2, searchCriterias);
-                return true;
-            }
-        } else if (constraint instanceof Comparison) {
-            String operator = ((Comparison) constraint).getOperator();
-            DynamicOperand operand1 = ((Comparison) constraint).getOperand1();
-            StaticOperand operand2 = ((Comparison) constraint).getOperand2();
-            if (Operator.LIKE.equals(operator)) {
-                String key = null;
-                if (operand1 instanceof PropertyValue) {
-                    key = ((PropertyValue) operand1).getPropertyName();
-                } else if (operand1 instanceof LowerCase
-                        && ((LowerCase) operand1).getOperand() instanceof PropertyValue) {
-                    key = ((PropertyValue) ((LowerCase) operand1).getOperand()).getPropertyName();
-                }
-                if ("j:nodename".equals(key)) {
-                    key = "groupname";
-                }
-                if (key != null && operand2 instanceof Literal) {
-                    searchCriterias.put(key, getCriteriaValue(((Literal) operand2).getLiteralValue().getString()));
-                }
-            }
-        }
-        return false;
-    }
-
-    private String getCriteriaValue(String comparisonValue) {
-        if ("%".equals(comparisonValue)) {
-            return "*";
-        } else if (comparisonValue.indexOf("%") == comparisonValue.length() - 1) {
-            return comparisonValue.substring(0, comparisonValue.length() - 1);
-        } else {
-            return Patterns.PERCENT.matcher(comparisonValue).replaceAll("*");
-        }
     }
 
     private ExternalData getGroupData(String groupName) {

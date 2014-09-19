@@ -102,11 +102,6 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
         if (path == null || path.indexOf('/') == -1) {
             throw new PathNotFoundException(path);
         }
-        if ("/".equals(path)) {
-            Properties searchCriterias = new Properties();
-            searchCriterias.put("username", "*");
-            return userGroupProvider.searchUsers(searchCriterias);
-        }
         JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
         String[] pathSegments = StringUtils.split(path, '/');
         if (pathSegments.length >= userSplittingRule.getNumberOfSegments() + 1) { // number of split folders + user name
@@ -116,10 +111,12 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
         Properties searchCriterias = new Properties();
         searchCriterias.put("username", "*");
         for (String user : userGroupProvider.searchUsers(searchCriterias)) {
-            String s = userSplittingRule.getPathForUsername(user);
-            s = StringUtils.removeStart(s, path + "/");
-            s = StringUtils.substringAfter(s, "/");
-            children.add(s);
+            String s = userSplittingRule.getRelativePathForUsername(user);
+            if (s.startsWith(path)) {
+                s = StringUtils.removeStart(s, path.endsWith("/") ? path : path + "/");
+                s = StringUtils.substringBefore(s, "/");
+                children.add(s);
+            }
         }
         List<String> l = new ArrayList<String>();
         l.addAll(children);
@@ -180,90 +177,30 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
     @Override
     public boolean itemExists(String path) {
         try {
-            JahiaUser user = userGroupProvider.getUser(StringUtils.substringAfterLast(path, "/"));
-            if (!path.equals(jahiaUserManagerService.getUserSplittingRule().getPathForUsername(user.getName()))) {
-                return false;
-            }
-            return true;
-        } catch (UserNotFoundException e) {
+            getItemByPath(path);
+        } catch (PathNotFoundException e) {
             return false;
         }
+        return true;
     }
 
     @Override
     public List<String> search(ExternalQuery externalQuery) throws RepositoryException {
         Properties searchCriterias = new Properties();
-        boolean hasOrConstraints = getCriteriasFromConstraints(externalQuery.getConstraint(), searchCriterias);
-        if (searchCriterias.isEmpty()) {
-            searchCriterias.put("*", "*");
-        } else if (!hasOrConstraints) {
+        boolean hasOrConstraints = SearchCriteriaHelper.getCriteriasFromConstraints(externalQuery.getConstraint(), searchCriterias, "username");
+        if (searchCriterias.size() > 1 && !hasOrConstraints) {
             searchCriterias.put(JahiaUserManagerService.MULTI_CRITERIA_SEARCH_OPERATION, "and");
         }
         List<String> result = new ArrayList<String>();
         JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
         for (String userName : userGroupProvider.searchUsers(searchCriterias)) {
-            result.add(userSplittingRule.getPathForUsername(userName));
+            result.add(userSplittingRule.getRelativePathForUsername(userName));
         }
         return result;
     }
 
-    private boolean getCriteriasFromConstraints(Constraint constraint, Properties searchCriterias) throws RepositoryException {
-        if (constraint instanceof And) {
-            return getCriteriasFromConstraints(((And) constraint).getConstraint1(), searchCriterias) ||
-                    getCriteriasFromConstraints(((And) constraint).getConstraint2(), searchCriterias);
-        } else if (constraint instanceof Or) {
-            Constraint constraint1 = ((Or) constraint).getConstraint1();
-            Constraint constraint2 = ((Or) constraint).getConstraint2();
-            if (constraint1 instanceof FullTextSearch
-                    && ((FullTextSearch) constraint1).getPropertyName() == null
-                    && constraint2 instanceof Comparison
-                    && Operator.LIKE.equals(((Comparison) constraint2).getOperator())
-                    && ((Comparison) constraint2).getOperand1() instanceof LowerCase
-                    && ((LowerCase) ((Comparison) constraint2).getOperand1()).getOperand() instanceof PropertyValue
-                    && "j:nodename".equals(((PropertyValue) ((LowerCase) ((Comparison) constraint2).getOperand1()).getOperand()).getPropertyName())
-                    && ((Comparison) constraint2).getOperand2() instanceof Literal) {
-                searchCriterias.put("*", getCriteriaValue(((Literal) ((Comparison) constraint2).getOperand2()).getLiteralValue().getString()));
-                return false;
-            } else {
-                getCriteriasFromConstraints(constraint1, searchCriterias);
-                getCriteriasFromConstraints(constraint2, searchCriterias);
-                return true;
-            }
-        } else if (constraint instanceof Comparison) {
-            String operator = ((Comparison) constraint).getOperator();
-            DynamicOperand operand1 = ((Comparison) constraint).getOperand1();
-            StaticOperand operand2 = ((Comparison) constraint).getOperand2();
-            if (Operator.LIKE.equals(operator)) {
-                String key = null;
-                if (operand1 instanceof PropertyValue) {
-                    key = ((PropertyValue) operand1).getPropertyName();
-                } else if (operand1 instanceof LowerCase
-                        && ((LowerCase) operand1).getOperand() instanceof PropertyValue) {
-                    key = ((PropertyValue) ((LowerCase) operand1).getOperand()).getPropertyName();
-                }
-                if ("j:nodename".equals(key)) {
-                    key = "username";
-                }
-                if (key != null && operand2 instanceof Literal) {
-                    searchCriterias.put(key, getCriteriaValue(((Literal) operand2).getLiteralValue().getString()));
-                }
-            }
-        }
-        return false;
-    }
-
-    private String getCriteriaValue(String comparisonValue) {
-        if ("%".equals(comparisonValue)) {
-            return "*";
-        } else if (comparisonValue.indexOf("%") == comparisonValue.length() - 1) {
-            return comparisonValue.substring(0, comparisonValue.length() - 1);
-        } else {
-            return Patterns.PERCENT.matcher(comparisonValue).replaceAll("*");
-        }
-    }
-
     private ExternalData getUserData(JahiaUser user) {
-        String path = jahiaUserManagerService.getUserSplittingRule().getPathForUsername(user.getName());
+        String path = jahiaUserManagerService.getUserSplittingRule().getRelativePathForUsername(user.getName());
         Map<String,String[]> properties = new HashMap<String, String[]>();
         Properties userProperties = user.getProperties();
         for (Object key : userProperties.keySet()) {
