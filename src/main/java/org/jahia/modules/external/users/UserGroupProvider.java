@@ -90,5 +90,5 @@ public interface UserGroupProvider {
 
     List<String> searchGroups(Properties searchCriterias);
 
-    boolean verifyPassword(String userPassword);
+    boolean verifyPassword(String userName, String userPassword);
 }
