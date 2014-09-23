@@ -76,6 +76,7 @@ import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
+import org.jahia.services.content.decorator.JCRUserNode;
 import org.jahia.services.usermanager.JahiaUser;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.services.usermanager.JahiaUserSplittingRule;
@@ -194,6 +195,10 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
     public List<String> search(ExternalQuery externalQuery) throws RepositoryException {
         Properties searchCriterias = new Properties();
         boolean hasOrConstraints = SearchCriteriaHelper.getCriteriasFromConstraints(externalQuery.getConstraint(), searchCriterias, "username");
+        // abort the search if we are only looking for internal users.
+        if(searchCriterias.containsKey(JCRUserNode.J_EXTERNAL) && !Boolean.valueOf(searchCriterias.getProperty(JCRUserNode.J_EXTERNAL))){
+            return Collections.emptyList();
+        }
         if (searchCriterias.size() > 1 && !hasOrConstraints) {
             searchCriterias.put(JahiaUserManagerService.MULTI_CRITERIA_SEARCH_OPERATION, "and");
         }
