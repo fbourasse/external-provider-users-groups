@@ -72,7 +72,6 @@
 package org.jahia.modules.external.users;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.jackrabbit.commons.query.qom.Operator;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
@@ -80,15 +79,17 @@ import org.jahia.modules.external.ExternalQuery;
 import org.jahia.services.usermanager.JahiaUser;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.services.usermanager.JahiaUserSplittingRule;
-import org.jahia.utils.Patterns;
 
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
-import javax.jcr.query.qom.*;
 import java.util.*;
 
-public class UsersDataSource implements ExternalDataSource, ExternalDataSource.Searchable {
+import static javax.jcr.security.Privilege.*;
+import static org.jahia.api.Constants.EDIT_WORKSPACE;
+import static org.jahia.api.Constants.LIVE_WORKSPACE;
+
+public class UsersDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable {
 
     private JahiaUserManagerService jahiaUserManagerService;
 
@@ -139,10 +140,16 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
         if (path == null || path.indexOf('/') == -1) {
             throw new PathNotFoundException(path);
         }
+        if ("/".equals(path)) {
+            return new ExternalData(path, path, "jnt:usersFolder", new HashMap<String, String[]>());
+        }
         String[] pathSegments = StringUtils.split(path, '/');
         JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
         if (pathSegments.length <= userSplittingRule.getNumberOfSegments()) {
-            return new ExternalData(path, path, "jnt:usersFolder", new HashMap<String, String[]>());
+            if (pathSegments[pathSegments.length - 1].length() == 2) { // split folder names are two characters long
+                return new ExternalData(path, path, "jnt:usersFolder", new HashMap<String, String[]>());
+            }
+            throw new PathNotFoundException(path);
         }
         if (pathSegments.length >  userSplittingRule.getNumberOfSegments() + 1) { // number of split folders + user name
             throw new PathNotFoundException(path);
@@ -228,5 +235,34 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
 
     public void setContentStoreProvider(ExternalContentStoreProvider contentStoreProvider) {
         this.contentStoreProvider = contentStoreProvider;
+    }
+
+    public String[] getPrivilegesNames(String username, String path) {
+        if (path.contains("/")) {
+            String[] pathSegments = StringUtils.split(path, '/');
+            JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
+            if (pathSegments.length == userSplittingRule.getNumberOfSegments() + 1 // number of split folders + user name
+                    && username.equals(pathSegments[userSplittingRule.getNumberOfSegments()])) {
+                return new String[] {
+                        JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE,
+                        JCR_WRITE + "_" + EDIT_WORKSPACE, JCR_WRITE + "_" + LIVE_WORKSPACE,
+                        JCR_ADD_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_ADD_CHILD_NODES + "_" + LIVE_WORKSPACE,
+                        JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_REMOVE_CHILD_NODES + "_" + LIVE_WORKSPACE,
+                        "actions"
+                };
+            }
+            if (pathSegments.length > userSplittingRule.getNumberOfSegments() + 1 // user subfolder
+                    && username.equals(pathSegments[userSplittingRule.getNumberOfSegments()])) {
+                return new String[] {
+                        JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE,
+                        JCR_WRITE + "_" + EDIT_WORKSPACE, JCR_WRITE + "_" + LIVE_WORKSPACE,
+                        JCR_REMOVE_NODE + "_" + EDIT_WORKSPACE, JCR_REMOVE_NODE + "_" + LIVE_WORKSPACE,
+                        JCR_ADD_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_ADD_CHILD_NODES + "_" + LIVE_WORKSPACE,
+                        JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_REMOVE_CHILD_NODES + "_" + LIVE_WORKSPACE,
+                        "actions"
+                };
+            }
+        }
+        return new String[] {JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE};
     }
 }

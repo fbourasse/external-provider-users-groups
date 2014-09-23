@@ -72,18 +72,18 @@
 package org.jahia.modules.external.users;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.jackrabbit.commons.query.qom.Operator;
-import org.jahia.modules.external.*;
+import org.jahia.modules.external.ExternalContentStoreProvider;
+import org.jahia.modules.external.ExternalData;
+import org.jahia.modules.external.ExternalDataSource;
+import org.jahia.modules.external.ExternalQuery;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.services.usermanager.JahiaUserSplittingRule;
-import org.jahia.utils.Patterns;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
-import javax.jcr.query.qom.*;
 import java.util.*;
 
 public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.Searchable {

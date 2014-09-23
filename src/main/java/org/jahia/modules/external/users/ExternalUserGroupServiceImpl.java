@@ -71,7 +71,6 @@
  */
 package org.jahia.modules.external.users;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.services.SpringContextSingleton;
@@ -80,8 +79,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jcr.RepositoryException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.LinkedHashMap;
+import java.util.Arrays;
 import java.util.Map;
 
 public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
@@ -134,6 +132,9 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
                 userProvider.setKey(userProviderKey);
                 userProvider.setMountPoint(usersFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
                 userProvider.setDataSource(usersDataSource);
+                userProvider.setReadOnly(true);
+                userProvider.setExtendableTypes(Arrays.asList("nt:base"));
+                userProvider.setOverridableItems(Arrays.asList("jnt:user.*", "jnt:usersFolder.*", "mix:lastModified.*", "jmix:lastPublished.*"));
 
                 usersDataSource.setContentStoreProvider(userProvider);
 
@@ -145,6 +146,7 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
                 groupProvider.setKey(groupProviderKey);
                 groupProvider.setMountPoint(groupsFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
                 groupProvider.setDataSource(groupDataSource);
+                groupProvider.setReadOnly(true);
 
                 groupDataSource.setContentStoreProvider(groupProvider);
 
