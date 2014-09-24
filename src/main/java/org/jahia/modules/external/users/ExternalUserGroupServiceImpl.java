@@ -120,8 +120,8 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
             return;
         }
 
-        String userProviderKey = providerKey + "-users";
-        String groupProviderKey = providerKey + "-groups";
+        String userProviderKey = providerKey + ".users";
+        String groupProviderKey = providerKey + ".groups";
         Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
         if (providers.get(userProviderKey) == null && providers.get(groupProviderKey) == null) {
             try {
@@ -160,13 +160,13 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
     public void unregister(String providerKey) {
         JCRSessionFactory sessionFactory = jcrStoreService.getSessionFactory();
-        String userProviderKey = providerKey + "-users";
+        String userProviderKey = providerKey + ".users";
         JCRStoreProvider provider = sessionFactory.getProviders().get(userProviderKey);
         if (provider != null) {
             provider.stop();
             sessionFactory.removeProvider(providerKey);
         }
-        String groupProviderKey = providerKey + "-groups";
+        String groupProviderKey = providerKey + ".groups";
         provider = sessionFactory.getProviders().get(groupProviderKey);
         if (provider != null) {
             provider.stop();
