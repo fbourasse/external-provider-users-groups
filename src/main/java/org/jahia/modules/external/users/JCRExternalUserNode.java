@@ -86,4 +86,9 @@ public class JCRExternalUserNode extends JCRUserNode {
         UsersDataSource dataSource = (UsersDataSource) ((ExternalContentStoreProvider) getProvider()).getDataSource();
         return dataSource.getUserGroupProvider().verifyPassword(getName(), userPassword);
     }
+
+    @Override
+    public boolean setPassword(String pwd) {
+        throw new UnsupportedOperationException();
+    }
 }
