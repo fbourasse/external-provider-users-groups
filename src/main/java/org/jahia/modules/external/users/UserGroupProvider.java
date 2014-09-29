@@ -84,7 +84,7 @@ public interface UserGroupProvider {
 
     List<Member> getGroupMembers(String groupName);
 
-    List<String> getMembership(String pricipalName);
+    List<String> getMembership(Member member);
 
     List<String> searchUsers(Properties searchCriterias);
 

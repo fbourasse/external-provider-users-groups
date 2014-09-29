@@ -86,11 +86,12 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import java.util.*;
 
-public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.Searchable {
+public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.Referenceable {
 
     private static final Logger logger = LoggerFactory.getLogger(GroupsDataSource.class);
 
     public static final String MEMBERS_ROOT_NAME = "j:members";
+    public static final String MEMBER_REF_ATTR = "j:member";
 
     private JahiaUserManagerService jahiaUserManagerService;
 
@@ -188,7 +189,7 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         if (StringUtils.isNotBlank(userPath)) {
             int nbrOfUserPathSegments = StringUtils.split(userPath, '/').length;
             if (nbrOfUserPathSegments == userSplittingRule.getNumberOfSegments() + 1) { // member user path
-                 return getMemberData(path, userPath, usersDataSource.getContentStoreProvider());
+                return getMemberData(path, userPath, usersDataSource.getContentStoreProvider());
             } else if (nbrOfUserPathSegments < userSplittingRule.getNumberOfSegments() + 1) { // split folder
                 return new ExternalData(path, path, "jnt:members", new HashMap<String, String[]>());
             } else { // path too long
@@ -208,7 +209,7 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
     private ExternalData getMemberData(String path, String refPath, ExternalContentStoreProvider provider) {
         HashMap<String, String[]> properties = new HashMap<String, String[]>();
         try {
-            properties.put("j:member", new String[]{provider.getOrCreateInternalIdentifier(refPath)});
+            properties.put(MEMBER_REF_ATTR, new String[]{provider.getOrCreateInternalIdentifier(refPath)});
         } catch (RepositoryException e) {
             logger.error("Failed to get UUID for member " + refPath, e);
         }
@@ -257,6 +258,41 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         properties.put("j:external", new String[]{"true"});
         properties.put("j:externalSource", new String[]{contentStoreProvider.getKey()});
         return new ExternalData(path, path, "jnt:group", properties);
+    }
+
+    @Override
+    public List<String> getReferringProperties(String identifier, String propertyName) {
+        if (MEMBER_REF_ATTR.equals(propertyName)) {
+            String principalId = identifier;
+            List<String> groups = null;
+            ExternalContentStoreProvider provider = null;
+
+            if (principalId.startsWith("/")) {
+                // already an externalId -> identifier of a group
+                groups = userGroupProvider.getMembership(new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.GROUP));
+                provider = contentStoreProvider;
+            } else {
+                try {
+                    provider = usersDataSource.getContentStoreProvider();
+                    principalId = provider.getExternalProviderInitializerService().getExternalIdentifier(identifier);
+                    if (principalId != null && principalId.startsWith("/")) {
+                        groups = userGroupProvider.getMembership(new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.USER));
+                    }
+                } catch (RepositoryException e) {
+                    logger.debug("Error while treating member id as an external user one", e);
+                }
+            }
+
+            List<String> properties = new ArrayList<String>();
+            if (groups != null && !groups.isEmpty()) {
+                for (String group : groups) {
+                    properties.add("/" + group + "/" + MEMBERS_ROOT_NAME + provider.getMountPoint() + principalId + "/" + MEMBER_REF_ATTR);
+                }
+            }
+            return properties;
+        }
+
+        return null;
     }
 
     public void setJahiaUserManagerService(JahiaUserManagerService jahiaUserManagerService) {
