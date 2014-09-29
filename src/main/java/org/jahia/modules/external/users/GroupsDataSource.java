@@ -107,9 +107,9 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
             throw new PathNotFoundException(path);
         }
         if ("/".equals(path)) {
-            Properties searchCriterias = new Properties();
-            searchCriterias.put("groupname", "*");
-            return userGroupProvider.searchGroups(searchCriterias);
+            Properties searchCriteria = new Properties();
+            searchCriteria.put("groupname", "*");
+            return userGroupProvider.searchGroups(searchCriteria);
         }
         String[] pathSegments = StringUtils.split(path, '/');
         if (pathSegments.length == 1) {
@@ -243,10 +243,10 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
 
     @Override
     public List<String> search(ExternalQuery externalQuery) throws RepositoryException {
-        Properties searchCriterias = new Properties();
-        SearchCriteriaHelper.getCriteriasFromConstraints(externalQuery.getConstraint(), searchCriterias, "groupname");
+        Properties searchCriteria = new Properties();
+        SearchCriteriaHelper.getCriteriaFromConstraints(externalQuery.getConstraint(), searchCriteria, "groupname");
         List<String> result = new ArrayList<String>();
-        for (String groupName : userGroupProvider.searchGroups(searchCriterias)) {
+        for (String groupName : userGroupProvider.searchGroups(searchCriteria)) {
             result.add("/" + groupName);
         }
         return result;

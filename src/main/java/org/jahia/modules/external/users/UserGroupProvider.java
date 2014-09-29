@@ -78,17 +78,69 @@ import java.util.Properties;
 
 public interface UserGroupProvider {
 
+    /**
+     * Returns the user having the specified name
+     *
+     * @param name the user name
+     * @return a JahiaUser object
+     * @throws UserNotFoundException if no user with the specified name exists
+     */
     JahiaUser getUser(String name) throws UserNotFoundException;
 
+    /**
+     * Returns true if a group with the specified name exists
+     *
+     * @param name a group name
+     * @return true if a group with the specified name exists
+     */
     boolean groupExists(String name);
 
+    /**
+     * Returns the members of a specified group
+     *
+     * @param groupName the group name
+     * @return a list of {@link Member}
+     */
     List<Member> getGroupMembers(String groupName);
 
+    /**
+     * Returns all the groups containing the specified member
+     *
+     * @param member a member (user or group)
+     * @return a list of group names
+     */
     List<String> getMembership(Member member);
 
-    List<String> searchUsers(Properties searchCriterias);
+    /**
+     * Find users according to a table of name=value properties. If the left
+     * side value is "*" for a property then it will be tested against all the
+     * properties. ie *=test* will match every property that starts with "test"
+     *
+     * @param searchCriteria a Properties object that contains search criteria
+     *                        in the format name,value (for example "*"="*" or "username"="*test*") or
+     *                        null to search without criteria
+     * @return a list of user names
+     */
+    List<String> searchUsers(Properties searchCriteria);
 
-    List<String> searchGroups(Properties searchCriterias);
+    /**
+     * Find groups according to a table of name=value properties. If the left
+     * side value is "*" for a property then it will be tested against all the
+     * properties. ie *=test* will match every property that starts with "test"
+     *
+     * @param searchCriteria a Properties object that contains search criteria
+     *                        in the format name,value (for example "*"="*" or "groupname"="*test*") or
+     *                        null to search without criteria
+     * @return a list of group names
+     */
+    List<String> searchGroups(Properties searchCriteria);
 
+    /**
+     * Verify if the specified password is correct for the specified user
+     *
+     * @param userName the user name
+     * @param userPassword the user password
+     * @return {@value true} if the password is correct, else {@value false}
+     */
     boolean verifyPassword(String userName, String userPassword);
 }

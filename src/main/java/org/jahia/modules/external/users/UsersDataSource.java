@@ -109,9 +109,9 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
             return Collections.emptyList();
         }
         HashSet<String> children = new HashSet<String>();
-        Properties searchCriterias = new Properties();
-        searchCriterias.put("username", "*");
-        for (String user : userGroupProvider.searchUsers(searchCriterias)) {
+        Properties searchCriteria = new Properties();
+        searchCriteria.put("username", "*");
+        for (String user : userGroupProvider.searchUsers(searchCriteria)) {
             String s = userSplittingRule.getRelativePathForUsername(user);
             if (s.startsWith(path)) {
                 s = StringUtils.removeStart(s, path.endsWith("/") ? path : path + "/");
@@ -193,18 +193,18 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
 
     @Override
     public List<String> search(ExternalQuery externalQuery) throws RepositoryException {
-        Properties searchCriterias = new Properties();
-        boolean hasOrConstraints = SearchCriteriaHelper.getCriteriasFromConstraints(externalQuery.getConstraint(), searchCriterias, "username");
+        Properties searchCriteria = new Properties();
+        boolean hasOrConstraints = SearchCriteriaHelper.getCriteriaFromConstraints(externalQuery.getConstraint(), searchCriteria, "username");
         // abort the search if we are only looking for internal users.
-        if(searchCriterias.containsKey(JCRUserNode.J_EXTERNAL) && !Boolean.valueOf(searchCriterias.getProperty(JCRUserNode.J_EXTERNAL))){
+        if(searchCriteria.containsKey(JCRUserNode.J_EXTERNAL) && !Boolean.valueOf(searchCriteria.getProperty(JCRUserNode.J_EXTERNAL))){
             return Collections.emptyList();
         }
-        if (searchCriterias.size() > 1 && !hasOrConstraints) {
-            searchCriterias.put(JahiaUserManagerService.MULTI_CRITERIA_SEARCH_OPERATION, "and");
+        if (searchCriteria.size() > 1 && !hasOrConstraints) {
+            searchCriteria.put(JahiaUserManagerService.MULTI_CRITERIA_SEARCH_OPERATION, "and");
         }
         List<String> result = new ArrayList<String>();
         JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
-        for (String userName : userGroupProvider.searchUsers(searchCriterias)) {
+        for (String userName : userGroupProvider.searchUsers(searchCriteria)) {
             result.add(userSplittingRule.getRelativePathForUsername(userName));
         }
         return result;

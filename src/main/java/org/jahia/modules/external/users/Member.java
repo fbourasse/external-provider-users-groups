@@ -72,6 +72,9 @@
 package org.jahia.modules.external.users;
 
 
+/**
+ * Class used to describe a member with a name and a type (user or group)
+ */
 public class Member {
 
     public enum MemberType {USER, GROUP};

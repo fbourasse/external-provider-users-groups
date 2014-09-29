@@ -84,18 +84,18 @@ public class SearchCriteriaHelper {
      * Get String/String principal search criteria from search query constraint
      *
      * @param constraint
-     * @param searchCriterias
+     * @param searchCriteria
      * @param principalNameProperty
      * @return true if the query contains OR constraints
      * @throws RepositoryException
      */
-    protected static boolean getCriteriasFromConstraints(Constraint constraint, Properties searchCriterias, String principalNameProperty) throws RepositoryException {
+    protected static boolean getCriteriaFromConstraints(Constraint constraint, Properties searchCriteria, String principalNameProperty) throws RepositoryException {
         if (constraint == null) {
-            searchCriterias.put("*", "*");
+            searchCriteria.put("*", "*");
             return false;
         } else if (constraint instanceof And) {
-            return getCriteriasFromConstraints(((And) constraint).getConstraint1(), searchCriterias, principalNameProperty) ||
-                    getCriteriasFromConstraints(((And) constraint).getConstraint2(), searchCriterias, principalNameProperty);
+            return getCriteriaFromConstraints(((And) constraint).getConstraint1(), searchCriteria, principalNameProperty) ||
+                    getCriteriaFromConstraints(((And) constraint).getConstraint2(), searchCriteria, principalNameProperty);
         } else if (constraint instanceof Or) {
             Constraint constraint1 = ((Or) constraint).getConstraint1();
             Constraint constraint2 = ((Or) constraint).getConstraint2();
@@ -107,11 +107,11 @@ public class SearchCriteriaHelper {
                     && ((LowerCase) ((Comparison) constraint2).getOperand1()).getOperand() instanceof PropertyValue
                     && "j:nodename".equals(((PropertyValue) ((LowerCase) ((Comparison) constraint2).getOperand1()).getOperand()).getPropertyName())
                     && ((Comparison) constraint2).getOperand2() instanceof Literal) {
-                searchCriterias.put("*", getLikeComparisonValue(((Literal) ((Comparison) constraint2).getOperand2()).getLiteralValue().getString()));
+                searchCriteria.put("*", getLikeComparisonValue(((Literal) ((Comparison) constraint2).getOperand2()).getLiteralValue().getString()));
                 return false;
             } else {
-                getCriteriasFromConstraints(constraint1, searchCriterias, principalNameProperty);
-                getCriteriasFromConstraints(constraint2, searchCriterias, principalNameProperty);
+                getCriteriaFromConstraints(constraint1, searchCriteria, principalNameProperty);
+                getCriteriaFromConstraints(constraint2, searchCriteria, principalNameProperty);
                 return true;
             }
         } else if (constraint instanceof Comparison) {
@@ -121,12 +121,12 @@ public class SearchCriteriaHelper {
             if (Operator.LIKE.toString().equals(operator)) {
                 String key = getCriteriaKey(operand1, principalNameProperty);
                 if (key != null && operand2 instanceof Literal) {
-                    searchCriterias.put(key, getLikeComparisonValue(((Literal) operand2).getLiteralValue().getString()));
+                    searchCriteria.put(key, getLikeComparisonValue(((Literal) operand2).getLiteralValue().getString()));
                 }
             } else if (Operator.EQ.toString().equals(operator)) {
                 String key = getCriteriaKey(operand1, principalNameProperty);
                 if (key != null && operand2 instanceof Literal) {
-                    searchCriterias.put(key, ((Literal) operand2).getLiteralValue().getString());
+                    searchCriteria.put(key, ((Literal) operand2).getLiteralValue().getString());
                 }
             }
         }
