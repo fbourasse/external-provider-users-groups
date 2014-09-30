@@ -132,7 +132,6 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
                 userProvider.setKey(userProviderKey);
                 userProvider.setMountPoint(usersFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
                 userProvider.setDataSource(usersDataSource);
-                userProvider.setReadOnly(true);
                 userProvider.setExtendableTypes(Arrays.asList("nt:base"));
                 userProvider.setOverridableItems(Arrays.asList("jnt:user.*", "jnt:usersFolder.*", "mix:lastModified.*", "jmix:lastPublished.*"));
 
@@ -146,7 +145,6 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
                 groupProvider.setKey(groupProviderKey);
                 groupProvider.setMountPoint(groupsFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
                 groupProvider.setDataSource(groupDataSource);
-                groupProvider.setReadOnly(true);
 
                 groupDataSource.setContentStoreProvider(groupProvider);
 
