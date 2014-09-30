@@ -71,6 +71,7 @@
  */
 package org.jahia.modules.external.users;
 
+import org.jahia.services.usermanager.JahiaGroup;
 import org.jahia.services.usermanager.JahiaUser;
 
 import java.util.List;
@@ -88,12 +89,13 @@ public interface UserGroupProvider {
     JahiaUser getUser(String name) throws UserNotFoundException;
 
     /**
-     * Returns true if a group with the specified name exists
+     * Returns the group having the specified name
      *
-     * @param name a group name
-     * @return true if a group with the specified name exists
+     * @param name the group name
+     * @return a JahiaGroup object
+     * @throws GroupNotFoundException if no group with the specified name exists
      */
-    boolean groupExists(String name);
+    JahiaGroup getGroup(String name) throws GroupNotFoundException;
 
     /**
      * Returns the members of a specified group

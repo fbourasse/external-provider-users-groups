@@ -72,6 +72,7 @@
 package org.jahia.modules.external.users;
 
 public class UserNotFoundException extends Exception {
+    private static final long serialVersionUID = 397409424965323443L;
 
     public UserNotFoundException() {
         super();

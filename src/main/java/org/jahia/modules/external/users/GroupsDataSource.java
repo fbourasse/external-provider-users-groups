@@ -78,6 +78,8 @@ import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
 import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.content.JCRSessionWrapper;
+import org.jahia.services.usermanager.JahiaGroup;
+import org.jahia.services.usermanager.JahiaUser;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.services.usermanager.JahiaUserSplittingRule;
 import org.slf4j.Logger;
@@ -194,13 +196,11 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         }
         String[] pathSegments = StringUtils.split(path, '/');
         if (pathSegments.length == 1) {
-            if (!userGroupProvider.groupExists(pathSegments[0])) {
-                throw new PathNotFoundException("Cannot find group " + path);
+            try {
+                return getGroupData(userGroupProvider.getGroup(pathSegments[0]));
+            } catch (GroupNotFoundException e) {
+                throw new PathNotFoundException("Cannot find group " + path, e);
             }
-            if (!path.equals("/" + pathSegments[0])) {
-                throw new PathNotFoundException("Cannot find group " + path);
-            }
-            return getGroupData(pathSegments[0]);
         }
         if (!MEMBERS_ROOT_NAME.equals(pathSegments[1])) {
             throw new PathNotFoundException(path);
@@ -275,9 +275,13 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         return result;
     }
 
-    private ExternalData getGroupData(String groupName) {
-        String path = "/" + groupName;
-        Map<String, String[]> properties = new HashMap<String, String[]>();
+    private ExternalData getGroupData(JahiaGroup group) {
+        String path = "/" + group.getName();
+        Map<String,String[]> properties = new HashMap<String, String[]>();
+        Properties userProperties = group.getProperties();
+        for (Object key : userProperties.keySet()) {
+            properties.put((String) key, new String[]{(String) userProperties.get(key)});
+        }
         properties.put("j:external", new String[]{"true"});
         properties.put("j:externalSource", new String[]{contentStoreProvider.getKey()});
         return new ExternalData(path, path, "jnt:group", properties);
