@@ -283,7 +283,7 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
             properties.put((String) key, new String[]{(String) userProperties.get(key)});
         }
         properties.put("j:external", new String[]{"true"});
-        properties.put("j:externalSource", new String[]{contentStoreProvider.getKey()});
+        properties.put("j:externalSource", new String[]{StringUtils.removeEnd(contentStoreProvider.getKey(), ".groups")});
         return new ExternalData(path, path, "jnt:group", properties);
     }
 
