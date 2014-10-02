@@ -92,6 +92,8 @@ import java.util.*;
 
 public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.Referenceable {
 
+    public static final HashSet<String> SUPPORTED_NODE_TYPES = new HashSet<String>(Arrays.asList("jnt:group", "jnt:members", "jnt:member"));
+
     private static final Logger logger = LoggerFactory.getLogger(GroupsDataSource.class);
 
     private static final String MEMBERS_ROOT_NAME = "j:members";
@@ -239,7 +241,7 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
 
     @Override
     public Set<String> getSupportedNodeTypes() {
-        return new HashSet(Arrays.asList("jnt:group", "jnt:members", "jnt:member"));
+        return SUPPORTED_NODE_TYPES;
     }
 
     @Override
@@ -277,9 +279,9 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
     private ExternalData getGroupData(JahiaGroup group) {
         String path = "/" + group.getName();
         Map<String,String[]> properties = new HashMap<String, String[]>();
-        Properties userProperties = group.getProperties();
-        for (Object key : userProperties.keySet()) {
-            properties.put((String) key, new String[]{(String) userProperties.get(key)});
+        Properties groupProperties = group.getProperties();
+        for (Object key : groupProperties.keySet()) {
+            properties.put((String) key, new String[]{(String) groupProperties.get(key)});
         }
         properties.put("j:external", new String[]{"true"});
         properties.put("j:externalSource", new String[]{StringUtils.removeEnd(contentStoreProvider.getKey(), ".groups")});

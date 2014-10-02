@@ -92,6 +92,7 @@ import static org.jahia.api.Constants.LIVE_WORKSPACE;
 
 public class UsersDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable {
 
+    public static final HashSet<String> SUPPORTED_NODE_TYPES = new HashSet<String>(Arrays.asList("jnt:externalUser", "jnt:usersFolder"));
     private JahiaUserManagerService jahiaUserManagerService;
 
     private UserGroupProvider userGroupProvider;
@@ -150,7 +151,7 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
 
     @Override
     public Set<String> getSupportedNodeTypes() {
-        return new HashSet(Arrays.asList("jnt:externalUser", "jnt:usersFolder"));
+        return SUPPORTED_NODE_TYPES;
     }
 
     @Override
