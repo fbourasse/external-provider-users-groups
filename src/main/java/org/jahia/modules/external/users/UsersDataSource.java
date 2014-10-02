@@ -103,25 +103,7 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
         if (path == null || path.indexOf('/') == -1) {
             throw new PathNotFoundException(path);
         }
-        JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
-        String[] pathSegments = StringUtils.split(path, '/');
-        if (pathSegments.length >= userSplittingRule.getNumberOfSegments() + 1) { // number of split folders + user name
-            return Collections.emptyList();
-        }
-        HashSet<String> children = new HashSet<String>();
-        Properties searchCriteria = new Properties();
-        searchCriteria.put("username", "*");
-        for (String user : userGroupProvider.searchUsers(searchCriteria)) {
-            String s = userSplittingRule.getRelativePathForUsername(user);
-            if (s.startsWith(path)) {
-                s = StringUtils.removeStart(s, path.endsWith("/") ? path : path + "/");
-                s = StringUtils.substringBefore(s, "/");
-                children.add(s);
-            }
-        }
-        List<String> l = new ArrayList<String>();
-        l.addAll(children);
-        return l;
+        return Collections.emptyList();
     }
 
     @Override

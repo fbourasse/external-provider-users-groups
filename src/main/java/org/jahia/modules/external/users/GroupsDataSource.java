@@ -112,9 +112,7 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
             throw new PathNotFoundException(path);
         }
         if ("/".equals(path)) {
-            Properties searchCriteria = new Properties();
-            searchCriteria.put("groupname", "*");
-            return userGroupProvider.searchGroups(searchCriteria);
+            return Collections.emptyList();
         }
         String[] pathSegments = StringUtils.split(path, '/');
         if (pathSegments.length == 1) {
