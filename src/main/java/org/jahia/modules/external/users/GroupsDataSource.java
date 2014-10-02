@@ -266,6 +266,7 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
     public List<String> search(ExternalQuery externalQuery) throws RepositoryException {
         Properties searchCriteria = new Properties();
         SearchCriteriaHelper.getCriteriaFromConstraints(externalQuery.getConstraint(), searchCriteria, "groupname");
+        searchCriteria.remove("jcr:language");
         List<String> result = new ArrayList<String>();
         for (String groupName : userGroupProvider.searchGroups(searchCriteria)) {
             result.add("/" + groupName);
