@@ -76,10 +76,7 @@ import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
-import org.jahia.services.content.JCRSessionFactory;
-import org.jahia.services.content.JCRSessionWrapper;
 import org.jahia.services.usermanager.JahiaGroup;
-import org.jahia.services.usermanager.JahiaUser;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.services.usermanager.JahiaUserSplittingRule;
 import org.slf4j.Logger;
@@ -270,7 +267,7 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         SearchCriteriaHelper.getCriteriaFromConstraints(externalQuery.getConstraint(), searchCriteria, "groupname");
         searchCriteria.remove("jcr:language");
         List<String> result = new ArrayList<String>();
-        for (String groupName : userGroupProvider.searchGroups(searchCriteria)) {
+        for (String groupName : userGroupProvider.searchGroups(searchCriteria, externalQuery.getOffset(), externalQuery.getLimit())) {
             result.add("/" + groupName);
         }
         return result;

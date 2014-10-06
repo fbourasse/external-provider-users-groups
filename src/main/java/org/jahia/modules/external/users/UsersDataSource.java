@@ -188,7 +188,7 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
         }
         List<String> result = new ArrayList<String>();
         JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
-        for (String userName : userGroupProvider.searchUsers(searchCriteria)) {
+        for (String userName : userGroupProvider.searchUsers(searchCriteria, externalQuery.getOffset(), externalQuery.getLimit())) {
             result.add(userSplittingRule.getRelativePathForUsername(userName));
         }
         return result;

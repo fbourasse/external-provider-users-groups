@@ -123,7 +123,7 @@ public interface UserGroupProvider {
      *                        null to search without criteria
      * @return a list of user names
      */
-    List<String> searchUsers(Properties searchCriteria);
+    List<String> searchUsers(Properties searchCriteria, long offset, long limit);
 
     /**
      * Find groups according to a table of name=value properties. If the left
@@ -135,7 +135,7 @@ public interface UserGroupProvider {
      *                        null to search without criteria
      * @return a list of group names
      */
-    List<String> searchGroups(Properties searchCriteria);
+    List<String> searchGroups(Properties searchCriteria, long offset, long limit);
 
     /**
      * Verify if the specified password is correct for the specified user
