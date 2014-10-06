@@ -145,4 +145,10 @@ public interface UserGroupProvider {
      * @return {@value true} if the password is correct, else {@value false}
      */
     boolean verifyPassword(String userName, String userPassword);
+
+    /**
+     * @return true if the provider supports groups, else false
+     */
+    boolean supportsGroups();
+
 }

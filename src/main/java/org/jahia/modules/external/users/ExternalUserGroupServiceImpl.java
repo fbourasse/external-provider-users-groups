@@ -90,7 +90,7 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
     private JCRStoreService jcrStoreService;
 
-    public void register(String providerKey, UserGroupProvider userGroupProvider) {
+    public void register(String providerKey, final UserGroupProvider userGroupProvider) {
         final String usersFolderPath = "/users";
         final String groupsFolderPath = "/groups";
 
@@ -105,7 +105,7 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
                         saveNeeded = true;
                     }
                     node = session.getNode(groupsFolderPath);
-                    if (!node.hasNode(PROVIDERS_MOUNT_CONTAINER)) {
+                    if (userGroupProvider.supportsGroups() && !node.hasNode(PROVIDERS_MOUNT_CONTAINER)) {
                         node.addNode(PROVIDERS_MOUNT_CONTAINER, "jnt:groupsFolder");
                         saveNeeded = true;
                     }
@@ -137,19 +137,22 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
                 usersDataSource.setContentStoreProvider(userProvider);
 
-                GroupsDataSource groupDataSource = (GroupsDataSource) SpringContextSingleton.getBeanInModulesContext("GroupsDataSourcePrototype");
-                groupDataSource.setUsersDataSource(usersDataSource);
-                groupDataSource.setUserGroupProvider(userGroupProvider);
-
-                ExternalContentStoreProvider groupProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
-                groupProvider.setKey(groupProviderKey);
-                groupProvider.setMountPoint(groupsFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
-                groupProvider.setDataSource(groupDataSource);
-
-                groupDataSource.setContentStoreProvider(groupProvider);
-
                 userProvider.start();
-                groupProvider.start();
+
+                if (userGroupProvider.supportsGroups()) {
+                    GroupsDataSource groupDataSource = (GroupsDataSource) SpringContextSingleton.getBeanInModulesContext("GroupsDataSourcePrototype");
+                    groupDataSource.setUsersDataSource(usersDataSource);
+                    groupDataSource.setUserGroupProvider(userGroupProvider);
+
+                    ExternalContentStoreProvider groupProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
+                    groupProvider.setKey(groupProviderKey);
+                    groupProvider.setMountPoint(groupsFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
+                    groupProvider.setDataSource(groupDataSource);
+
+                    groupDataSource.setContentStoreProvider(groupProvider);
+
+                    groupProvider.start();
+                }
             } catch (JahiaInitializationException e) {
                 logger.error(e.getMessage(), e);
             }
