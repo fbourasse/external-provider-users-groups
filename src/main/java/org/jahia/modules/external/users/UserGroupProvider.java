@@ -121,6 +121,8 @@ public interface UserGroupProvider {
      * @param searchCriteria a Properties object that contains search criteria
      *                        in the format name,value (for example "*"="*" or "username"="*test*") or
      *                        null to search without criteria
+     * @param offset the offset of search result used for paging
+     * @param limit the search result size limit used for paging. Value can be negative for unlimited result.
      * @return a list of user names
      */
     List<String> searchUsers(Properties searchCriteria, long offset, long limit);
@@ -133,6 +135,8 @@ public interface UserGroupProvider {
      * @param searchCriteria a Properties object that contains search criteria
      *                        in the format name,value (for example "*"="*" or "groupname"="*test*") or
      *                        null to search without criteria
+     * @param offset the offset of search result used for paging
+     * @param limit the search result size limit used for paging. Value can be negative for unlimited result.
      * @return a list of group names
      */
     List<String> searchGroups(Properties searchCriteria, long offset, long limit);
