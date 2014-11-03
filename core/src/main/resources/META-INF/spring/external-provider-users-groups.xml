@@ -17,6 +17,7 @@
 
   <bean id="ExternalUserGroupServiceImpl" class="org.jahia.modules.external.users.ExternalUserGroupServiceImpl">
     <property name="jcrStoreService" ref="JCRStoreService"/>
+    <property name="readOnlyUserProperties" value="${external.users.properties.readonly:j:firstName,j:lastName,j:organization,j:email}"/>
   </bean>
 
   <osgi:service id="ExternalUserGroupService" ref="ExternalUserGroupServiceImpl" interface="org.jahia.modules.external.users.ExternalUserGroupService"/>

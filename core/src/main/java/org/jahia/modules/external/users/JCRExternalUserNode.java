@@ -72,10 +72,18 @@
 package org.jahia.modules.external.users;
 
 import org.jahia.modules.external.ExternalContentStoreProvider;
+import org.jahia.modules.external.ExternalNodeImpl;
 import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.decorator.JCRUserNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jcr.RepositoryException;
+import java.util.Arrays;
 
 public class JCRExternalUserNode extends JCRUserNode {
+
+    private static final Logger logger = LoggerFactory.getLogger(JCRExternalUserNode.class);
 
     public JCRExternalUserNode(JCRNodeWrapper node) {
         super(node);
@@ -90,5 +98,21 @@ public class JCRExternalUserNode extends JCRUserNode {
     @Override
     public boolean setPassword(String pwd) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isPropertyEditable(String name) {
+        if (node.getRealNode() instanceof ExternalNodeImpl) {
+            ExternalNodeImpl externalNode = (ExternalNodeImpl) node.getRealNode();
+            try {
+                if (!externalNode.canItemBeExtended(externalNode.getPropertyDefinition(name))) {
+                    return false;
+                }
+            } catch (RepositoryException e) {
+                logger.error("Error while verifying definition of property " + name, e);
+            }
+        }
+
+        return super.isPropertyEditable(name);
     }
 }

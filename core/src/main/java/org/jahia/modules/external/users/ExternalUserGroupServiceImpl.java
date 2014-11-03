@@ -71,15 +71,19 @@
  */
 package org.jahia.modules.external.users;
 
+import org.apache.commons.lang.StringUtils;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.services.SpringContextSingleton;
 import org.jahia.services.content.*;
+import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jcr.RepositoryException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
@@ -89,6 +93,7 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
     private static final String PROVIDERS_MOUNT_CONTAINER = "providers";
 
     private JCRStoreService jcrStoreService;
+    private String readOnlyUserProperties;
 
     public void register(String providerKey, final UserGroupProvider userGroupProvider) {
         final String usersFolderPath = "/users";
@@ -134,6 +139,21 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
                 userProvider.setDataSource(usersDataSource);
                 userProvider.setExtendableTypes(Arrays.asList("nt:base"));
                 userProvider.setOverridableItems(Arrays.asList("jnt:user.*", "jnt:usersFolder.*", "mix:lastModified.*", "jmix:lastPublished.*"));
+                String readOnlyProps = (String) SettingsBean.getInstance().getPropertiesFile().get("external.users.properties.readonly." + providerKey);
+                if (StringUtils.isBlank(readOnlyProps)) {
+                    readOnlyProps = readOnlyUserProperties;
+                }
+                if (StringUtils.isNotBlank(readOnlyProps)) {
+                    List<String> nonOverridableItems = new ArrayList<String>();
+                    for (String p : StringUtils.split(readOnlyProps, ",")) {
+                        if (StringUtils.isNotBlank(p)) {
+                            nonOverridableItems.add("jnt:user." + p.trim());
+                        }
+                    }
+                    if (!nonOverridableItems.isEmpty()) {
+                        userProvider.setNonOverridableItems(nonOverridableItems);
+                    }
+                }
 
                 usersDataSource.setContentStoreProvider(userProvider);
 
@@ -177,5 +197,9 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
     public void setJcrStoreService(JCRStoreService jcrStoreService) {
         this.jcrStoreService = jcrStoreService;
+    }
+
+    public void setReadOnlyUserProperties(String readOnlyUserProperties) {
+        this.readOnlyUserProperties = readOnlyUserProperties;
     }
 }
