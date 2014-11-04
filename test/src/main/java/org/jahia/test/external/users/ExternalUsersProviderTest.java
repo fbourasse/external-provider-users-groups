@@ -83,6 +83,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.jcr.RepositoryException;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -159,4 +160,17 @@ public class ExternalUsersProviderTest extends JahiaTestCase {
         assertEquals("'groupname=t*' search should return toto, tutu and tyty", Sets.newHashSet(toto, tutu, tyty), groups);
     }
 
+    @Test
+    public void testExtension() throws RepositoryException {
+        JCRUserNode tata = jahiaUserManagerService.lookupUser("tata");
+        tata.setProperty("j:about", "I shot the sheriff");
+        assertEquals("Property not updated", "I shot the sheriff", tata.getProperty("j:about").getString());
+        boolean threwException = false;
+        try {
+            tata.setProperty("j:firstName", "Bob");
+        } catch (UnsupportedRepositoryOperationException e) {
+            threwException = true;
+        }
+        assertTrue("Setting a read-only property shouldn't be possible", threwException);
+    }
 }
