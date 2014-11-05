@@ -81,10 +81,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jcr.RepositoryException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
@@ -94,6 +91,7 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
     private JCRStoreService jcrStoreService;
     private String readOnlyUserProperties;
+    private Map<String, UserGroupProviderRegistration> registeredProviders = new TreeMap<String, UserGroupProviderRegistration>();
 
     public void register(String providerKey, final UserGroupProvider userGroupProvider) {
         final String usersFolderPath = "/users";
@@ -157,7 +155,12 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
                 usersDataSource.setContentStoreProvider(userProvider);
 
+                UserGroupProviderRegistration registration = new UserGroupProviderRegistration();
+                registration.setUserProvider(userProvider);
+                registeredProviders.put(providerKey, registration);
+
                 userProvider.start();
+
 
                 if (userGroupProvider.supportsGroups()) {
                     GroupsDataSource groupDataSource = (GroupsDataSource) SpringContextSingleton.getBeanInModulesContext("GroupsDataSourcePrototype");
@@ -171,6 +174,8 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
                     groupDataSource.setContentStoreProvider(groupProvider);
 
+                    registration.setGroupProvider(groupProvider);
+
                     groupProvider.start();
                 }
             } catch (JahiaInitializationException e) {
@@ -180,19 +185,20 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
     }
 
     public void unregister(String providerKey) {
-        JCRSessionFactory sessionFactory = jcrStoreService.getSessionFactory();
-        String userProviderKey = providerKey + ".users";
-        JCRStoreProvider provider = sessionFactory.getProviders().get(userProviderKey);
+        Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
+        JCRStoreProvider provider = providers.get(providerKey + ".users");
         if (provider != null) {
             provider.stop();
-            sessionFactory.removeProvider(providerKey);
         }
-        String groupProviderKey = providerKey + ".groups";
-        provider = sessionFactory.getProviders().get(groupProviderKey);
+        provider = providers.get(providerKey + ".groups");
         if (provider != null) {
             provider.stop();
-            sessionFactory.removeProvider(providerKey);
         }
+        registeredProviders.remove(providerKey);
+    }
+
+    public Map<String, UserGroupProviderRegistration> getRegisteredProviders() {
+        return registeredProviders;
     }
 
     public void setJcrStoreService(JCRStoreService jcrStoreService) {

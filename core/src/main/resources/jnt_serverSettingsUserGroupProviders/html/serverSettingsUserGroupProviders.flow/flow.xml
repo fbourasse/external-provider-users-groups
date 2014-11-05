@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flow xmlns="http://www.springframework.org/schema/webflow"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.springframework.org/schema/webflow
+                          http://www.springframework.org/schema/webflow/spring-webflow-2.0.xsd">
+
+    <var name="userGroupProviderHandler" class="org.jahia.modules.external.users.admin.UserGroupProviderAdminFlow"/>
+
+    <view-state id="view" >
+        <on-render>
+            <evaluate expression="userGroupProviderHandler.userGroupProviders" result="requestScope.userGroupProviders"/>
+        </on-render>
+        <transition on="suspendProvider" to="suspendProvider"/>
+        <transition on="resumeProvider" to="resumeProvider"/>
+    </view-state>
+
+    <action-state id="suspendProvider">
+        <evaluate expression="userGroupProviderHandler.suspendProvider(requestParameters.userGroupProviderKey)"/>
+        <transition to="view"/>
+    </action-state>
+
+    <action-state id="resumeProvider">
+        <evaluate expression="userGroupProviderHandler.resumeProvider(requestParameters.userGroupProviderKey)"/>
+        <transition to="view"/>
+    </action-state>
+
+</flow>
