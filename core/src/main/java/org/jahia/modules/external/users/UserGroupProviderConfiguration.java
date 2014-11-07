@@ -71,15 +71,27 @@
  */
 package org.jahia.modules.external.users;
 
+import org.springframework.webflow.core.collection.ParameterMap;
+
 /**
- * Service to register and unregister a UserGroupProvider
+ * Interface to implement a custom behaviour for a user and group provider configuration
  */
-public interface ExternalUserGroupService {
+public interface UserGroupProviderConfiguration {
 
-    void register(String providerKey, UserGroupProvider userGroupProvider);
+    boolean isCreateSupported();
 
-    void unregister(String providerKey);
+    String getCreateJSP();
 
-    void setConfiguration(String providerClass, UserGroupProviderConfiguration userGroupProviderConfig);
+    boolean create(ParameterMap parameters);
+
+    boolean isEditSupported();
+
+    String getEditJSP();
+
+    boolean edit(String providerKey, ParameterMap parameters);
+
+    boolean isDeleteSupported();
+
+    boolean delete(String providerKey);
 
 }

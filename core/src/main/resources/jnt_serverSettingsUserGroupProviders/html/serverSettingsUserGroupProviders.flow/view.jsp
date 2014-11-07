@@ -41,7 +41,7 @@
             <fmt:message key="label.key"/>
         </th>
         <th>
-            <fmt:message key="label.userGroupProvider.type"/>
+            <fmt:message key="label.userGroupProvider.class"/>
         </th>
         <th>
             <fmt:message key="label.userGroupProvider.supportsGroups"/>
@@ -56,15 +56,11 @@
 
     <c:forEach items="${userGroupProviders}" var="userGroupProvider" varStatus="loopStatus">
         <tr${not userGroupProvider.running ? ' class="warning"' : ''}>
-            <%--<td><input name="selectedProviders" type="checkbox" value="${mount.id}"/></td>--%>
-            <%--<td>--%>
-                 <%--${mount.id}--%>
-            <%--</td>--%>
             <td>
                 ${userGroupProvider.key}
             </td>
             <td>
-                ${userGroupProvider.type}
+                ${userGroupProvider.providerClass}
             </td>
             <td>
                 ${userGroupProvider.groupSupported}
@@ -72,8 +68,14 @@
             </td>
             <td>
                 <form style="margin: 0;" action="${flowExecutionUrl}" method="post">
-                    <input type="hidden" name="userGroupProviderKey" value="${userGroupProvider.key}"/>
-                    
+                    <input type="hidden" name="providerKey" value="${userGroupProvider.key}"/>
+                    <c:if test="${userGroupProvider.editSupported or userGroupProvider.deleteSupported}">
+                        <input type="hidden" name="providerClass" value="${userGroupProvider.providerClass}"/>
+                    </c:if>
+                    <c:if test="${userGroupProvider.editSupported}">
+                        <input type="hidden" name="editJSP" value="${userGroupProvider.editJSP}"/>
+                    </c:if>
+
                     <c:choose>
                         <c:when test="${userGroupProvider.running}">
                             <button class="btn" type="submit" name="_eventId_suspendProvider">
@@ -86,9 +88,34 @@
                             </button>
                         </c:otherwise>
                     </c:choose>
+
+                    <c:if test="${userGroupProvider.editSupported}">
+                        <button class="btn" type="submit" name="_eventId_editProvider">
+                            <i class="icon icon-pencil"></i>&nbsp;<fmt:message key="label.edit"/>
+                        </button>
+                    </c:if>
+
+                    <c:if test="${userGroupProvider.deleteSupported}">
+                        <button class="btn" type="submit" name="_eventId_deleteProvider">
+                            <i class="icon icon-trash"></i>&nbsp;<fmt:message key="label.delete"/>
+                        </button>
+                    </c:if>
                 </form>
             </td>
         </tr>
     </c:forEach>
     </tbody>
 </table>
+
+<c:if test="${not empty createConfigurations}">
+    <c:forEach items="${createConfigurations}" var="createConfiguration" varStatus="loopStatus">
+        <form style="margin: 0;" action="${flowExecutionUrl}" method="post">
+            <input type="hidden" name="providerClass" value="${createConfiguration.key}"/>
+            <input type="hidden" name="createJSP" value="${createConfiguration.value}"/>
+
+            <button class="btn" type="submit" name="_eventId_createProvider">
+                <i class="icon icon-plus"></i>&nbsp;<fmt:message key="${createConfiguration.key}.create"/>
+            </button>
+        </form>
+    </c:forEach>
+</c:if>

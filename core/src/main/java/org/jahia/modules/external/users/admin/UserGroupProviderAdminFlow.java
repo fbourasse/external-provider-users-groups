@@ -72,22 +72,16 @@
 package org.jahia.modules.external.users.admin;
 
 import org.jahia.exceptions.JahiaInitializationException;
-import org.jahia.modules.external.users.ExternalUserGroupServiceImpl;
-import org.jahia.modules.external.users.UserGroupProvider;
-import org.jahia.modules.external.users.UserGroupProviderRegistration;
-import org.jahia.modules.external.users.UsersDataSource;
-import org.jahia.services.content.JCRSessionFactory;
-import org.jahia.services.content.JCRStoreProvider;
-import org.jahia.services.content.JCRStoreService;
+import org.jahia.modules.external.users.*;
+import org.jahia.services.content.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.webflow.core.collection.ParameterMap;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class UserGroupProviderAdminFlow implements Serializable {
     private static final Logger logger = LoggerFactory.getLogger(UserGroupProviderAdminFlow.class);
@@ -101,16 +95,38 @@ public class UserGroupProviderAdminFlow implements Serializable {
         ArrayList<UserGroupProviderInfo> infos = new ArrayList<UserGroupProviderInfo>();
         Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
         for (Map.Entry<String, UserGroupProviderRegistration> entry : externalUserGroupServiceImpl.getRegisteredProviders().entrySet()) {
+            UserGroupProviderInfo providerInfo = new UserGroupProviderInfo();
+            providerInfo.setKey(entry.getKey());
             UsersDataSource dataSource = (UsersDataSource) entry.getValue().getUserProvider().getDataSource();
             UserGroupProvider userGroupProvider = dataSource.getUserGroupProvider();
-            boolean running = providers.containsKey(entry.getKey() + ".users") && providers.get(entry.getKey() + ".users").isAvailable();
-            infos.add(new UserGroupProviderInfo(entry.getKey(), userGroupProvider.getClass().getName(), userGroupProvider.supportsGroups(), running));
+            String userGroupProviderClass = userGroupProvider.getClass().getName();
+            providerInfo.setProviderClass(userGroupProviderClass);
+            providerInfo.setGroupSupported(userGroupProvider.supportsGroups());
+            providerInfo.setRunning(providers.containsKey(entry.getKey() + ".users") && providers.get(entry.getKey() + ".users").isAvailable());
+            Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
+            if (configurations.containsKey(userGroupProviderClass)) {
+                UserGroupProviderConfiguration configuration = configurations.get(userGroupProviderClass);
+                providerInfo.setEditSupported(configuration.isEditSupported());
+                providerInfo.setEditJSP(configuration.getEditJSP());
+                providerInfo.setDeleteSupported(configuration.isDeleteSupported());
+            }
+            infos.add(providerInfo);
         }
         return infos;
     }
 
-    public void suspendProvider(String userGroupProviderKey) {
-        UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(userGroupProviderKey);
+    public Map<String, String> getCreateConfigurations() {
+        HashMap<String, String> map = new HashMap<String, String>();
+        for (Map.Entry<String, UserGroupProviderConfiguration> entry : externalUserGroupServiceImpl.getProviderConfigurations().entrySet()) {
+            if (entry.getValue().isCreateSupported()) {
+                map.put(entry.getKey(), entry.getValue().getCreateJSP());
+            }
+        }
+        return map;
+    }
+
+    public void suspendProvider(String providerKey) {
+        UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(providerKey);
         JCRStoreProvider userProvider = registration.getUserProvider();
         if (userProvider != null) {
             userProvider.stop();
@@ -121,8 +137,8 @@ public class UserGroupProviderAdminFlow implements Serializable {
         }
     }
 
-    public void resumeProvider(String userGroupProviderKey) throws JahiaInitializationException {
-        UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(userGroupProviderKey);
+    public void resumeProvider(String providerKey) throws JahiaInitializationException {
+        UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(providerKey);
         JCRStoreProvider userProvider = registration.getUserProvider();
         if (userProvider != null) {
             userProvider.start();
@@ -131,6 +147,24 @@ public class UserGroupProviderAdminFlow implements Serializable {
         if (groupProvider != null) {
             groupProvider.start();
         }
+    }
+
+    public void createProvider(ParameterMap parameters) {
+        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
+        String providerClass = parameters.get("providerClass");
+        configurations.get(providerClass).create(parameters);
+    }
+
+    public void editProvider(ParameterMap parameters) {
+        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
+        String providerKey = parameters.get("providerKey");
+        String providerClass = parameters.get("providerClass");
+        configurations.get(providerClass).edit(providerKey, parameters);
+    }
+
+    public void deleteProvider(String providerKey, String providerClass) {
+        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
+        configurations.get(providerClass).delete(providerKey);
     }
 
     @Autowired

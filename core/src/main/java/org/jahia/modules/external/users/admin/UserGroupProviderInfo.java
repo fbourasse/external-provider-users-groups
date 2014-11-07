@@ -79,30 +79,66 @@ import java.io.Serializable;
 public class UserGroupProviderInfo implements Serializable {
 
     private String key;
-    private String type;
+    private String providerClass;
     private boolean groupSupported;
     private boolean running;
-
-    public UserGroupProviderInfo(String key, String type, boolean groupSupported, boolean running) {
-        this.key = key;
-        this.type = type;
-        this.groupSupported = groupSupported;
-        this.running = running;
-    }
+    private boolean editSupported = false;
+    private String editJSP;
+    private boolean deleteSupported = false;
 
     public String getKey() {
         return key;
     }
 
-    public String getType() {
-        return type;
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public String getProviderClass() {
+        return providerClass;
+    }
+
+    public void setProviderClass(String providerClass) {
+        this.providerClass = providerClass;
     }
 
     public boolean isGroupSupported() {
         return groupSupported;
     }
 
+    public void setGroupSupported(boolean groupSupported) {
+        this.groupSupported = groupSupported;
+    }
+
     public boolean isRunning() {
         return running;
+    }
+
+    public void setRunning(boolean running) {
+        this.running = running;
+    }
+
+    public boolean isEditSupported() {
+        return editSupported;
+    }
+
+    public void setEditSupported(boolean editSupported) {
+        this.editSupported = editSupported;
+    }
+
+    public String getEditJSP() {
+        return editJSP;
+    }
+
+    public void setEditJSP(String editJSP) {
+        this.editJSP = editJSP;
+    }
+
+    public boolean isDeleteSupported() {
+        return deleteSupported;
+    }
+
+    public void setDeleteSupported(boolean deleteSupported) {
+        this.deleteSupported = deleteSupported;
     }
 }

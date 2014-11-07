@@ -92,6 +92,7 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
     private JCRStoreService jcrStoreService;
     private String readOnlyUserProperties;
     private Map<String, UserGroupProviderRegistration> registeredProviders = new TreeMap<String, UserGroupProviderRegistration>();
+    private Map<String, UserGroupProviderConfiguration> providerConfigurations = new HashMap<String, UserGroupProviderConfiguration>();
 
     public void register(String providerKey, final UserGroupProvider userGroupProvider) {
         final String usersFolderPath = "/users";
@@ -195,6 +196,14 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
             provider.stop();
         }
         registeredProviders.remove(providerKey);
+    }
+
+    public void setConfiguration(String providerClass, UserGroupProviderConfiguration userGroupProviderConfig) {
+        providerConfigurations.put(providerClass, userGroupProviderConfig);
+    }
+
+    public Map<String, UserGroupProviderConfiguration> getProviderConfigurations() {
+        return providerConfigurations;
     }
 
     public Map<String, UserGroupProviderRegistration> getRegisteredProviders() {
