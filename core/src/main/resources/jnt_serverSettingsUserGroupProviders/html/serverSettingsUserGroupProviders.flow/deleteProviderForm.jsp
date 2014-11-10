@@ -17,7 +17,9 @@
 <template:addResources type="css" resources="jquery-ui.smoothness.css,jquery-ui.smoothness-jahia.css,tablecloth.css"/>
 
 
-<h2><fmt:message key="${providerClass}.delete"/></h2>
+<h2><fmt:message key="label.userGroupProvider.delete">
+    <fmt:param value="${providerKey}"/>
+</fmt:message></h2>
 
 <div class="alert"><fmt:message key="label.userGroupProvider.delete.confirm"/></div>
 

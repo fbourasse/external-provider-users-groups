@@ -73,10 +73,14 @@ package org.jahia.modules.external.users;
 
 import org.springframework.webflow.core.collection.ParameterMap;
 
+import java.io.Serializable;
+
 /**
  * Interface to implement a custom behaviour for a user and group provider configuration
  */
-public interface UserGroupProviderConfiguration {
+public interface UserGroupProviderConfiguration extends Serializable {
+
+    String getName();
 
     boolean isCreateSupported();
 

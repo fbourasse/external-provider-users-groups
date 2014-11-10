@@ -115,11 +115,11 @@ public class UserGroupProviderAdminFlow implements Serializable {
         return infos;
     }
 
-    public Map<String, String> getCreateConfigurations() {
-        HashMap<String, String> map = new HashMap<String, String>();
+    public Map<String, UserGroupProviderConfiguration> getCreateConfigurations() {
+        HashMap<String, UserGroupProviderConfiguration> map = new HashMap<String, UserGroupProviderConfiguration>();
         for (Map.Entry<String, UserGroupProviderConfiguration> entry : externalUserGroupServiceImpl.getProviderConfigurations().entrySet()) {
             if (entry.getValue().isCreateSupported()) {
-                map.put(entry.getKey(), entry.getValue().getCreateJSP());
+                map.put(entry.getKey(), entry.getValue());
             }
         }
         return map;

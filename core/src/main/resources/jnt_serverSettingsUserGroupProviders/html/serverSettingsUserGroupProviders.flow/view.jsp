@@ -111,10 +111,13 @@
     <c:forEach items="${createConfigurations}" var="createConfiguration" varStatus="loopStatus">
         <form style="margin: 0;" action="${flowExecutionUrl}" method="post">
             <input type="hidden" name="providerClass" value="${createConfiguration.key}"/>
-            <input type="hidden" name="createJSP" value="${createConfiguration.value}"/>
+            <input type="hidden" name="providerName" value="${createConfiguration.value.name}"/>
+            <input type="hidden" name="createJSP" value="${createConfiguration.value.createJSP}"/>
 
             <button class="btn" type="submit" name="_eventId_createProvider">
-                <i class="icon icon-plus"></i>&nbsp;<fmt:message key="${createConfiguration.key}.create"/>
+                <i class="icon icon-plus"></i>&nbsp;<fmt:message key="label.userGroupProvider.create">
+                        <fmt:param value="${createConfiguration.value.name}"/>
+                    </fmt:message>
             </button>
         </form>
     </c:forEach>

@@ -17,7 +17,9 @@
 <template:addResources type="css" resources="jquery-ui.smoothness.css,jquery-ui.smoothness-jahia.css,tablecloth.css"/>
 
 
-<h2><fmt:message key="${providerClass}.create"/></h2>
+<h2><fmt:message key="label.userGroupProvider.create">
+    <fmt:param value="${providerName}"/>
+</fmt:message></h2>
 
 <form style="margin: 0;" action="${flowExecutionUrl}" method="post">
     <input type="hidden" name="providerClass" value="${providerClass}"/>
@@ -28,8 +30,12 @@
         <button class="btn btn-primary" type="submit" name="_eventId_create">
             <fmt:message key="label.save"/>
         </button>
-        <button class="btn" type="submit" name="_eventId_cancel">
+        <button class="btn" type="button" onclick="$('#cancelForm${currentNode.identifier}').submit()">
             <fmt:message key="label.cancel"/>
         </button>
     </div>
+</form>
+
+<form id="cancelForm${currentNode.identifier}" style="display:none;" action="${flowExecutionUrl}" method="post">
+    <input type="hidden" name="_eventId" value="cancel"/>
 </form>
