@@ -299,9 +299,11 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
             } else {
                 try {
                     provider = usersDataSource.getContentStoreProvider();
-                    principalId = provider.getExternalProviderInitializerService().getExternalIdentifier(identifier);
-                    if (principalId != null && principalId.startsWith("/")) {
-                        groups = userGroupProvider.getMembership(new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.USER));
+                    if (identifier.startsWith(provider.getId())) {
+                        principalId = provider.getExternalProviderInitializerService().getExternalIdentifier(identifier);
+                        if (principalId != null && principalId.startsWith("/")) {
+                            groups = userGroupProvider.getMembership(new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.USER));
+                        }
                     }
                 } catch (RepositoryException e) {
                     logger.debug("Error while treating member id as an external user one", e);
