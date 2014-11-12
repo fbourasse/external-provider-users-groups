@@ -30,45 +30,54 @@
 
     <view-state id="createProviderForm">
         <on-entry>
-            <evaluate expression="requestParameters.providerName" result="flowScope.providerName"/>
-            <evaluate expression="requestParameters.providerClass" result="flowScope.providerClass"/>
-            <evaluate expression="requestParameters.createJSP" result="flowScope.createJSP"/>
+            <evaluate expression="requestParameters.providerName" result="flashScope.providerName"/>
+            <evaluate expression="requestParameters.providerClass" result="flashScope.providerClass"/>
+            <evaluate expression="requestParameters.createJSP" result="flashScope.createJSP"/>
         </on-entry>
         <transition on="create" to="createProvider"/>
         <transition on="cancel" to="theEnd"/>
     </view-state>
 
     <action-state id="createProvider">
-        <evaluate expression="userGroupProviderHandler.createProvider(requestParameters)"/>
+        <evaluate expression="userGroupProviderHandler.createProvider(requestParameters, flashScope)"/>
+        <transition on-exception="java.lang.Exception" to="createProviderForm">
+          <set name="flashScope.error" value="rootCauseException"/>
+        </transition>
         <transition to="theEnd"/>
     </action-state>
 
     <view-state id="editProviderForm">
         <on-entry>
-            <evaluate expression="requestParameters.providerKey" result="flowScope.providerKey"/>
-            <evaluate expression="requestParameters.providerClass" result="flowScope.providerClass"/>
-            <evaluate expression="requestParameters.editJSP" result="flowScope.editJSP"/>
+            <evaluate expression="requestParameters.providerKey" result="flashScope.providerKey"/>
+            <evaluate expression="requestParameters.providerClass" result="flashScope.providerClass"/>
+            <evaluate expression="requestParameters.editJSP" result="flashScope.editJSP"/>
         </on-entry>
         <transition on="save" to="editProvider"/>
         <transition on="cancel" to="theEnd"/>
     </view-state>
 
     <action-state id="editProvider">
-        <evaluate expression="userGroupProviderHandler.editProvider(requestParameters)"/>
+        <evaluate expression="userGroupProviderHandler.editProvider(requestParameters, flashScope)"/>
+        <transition on-exception="java.lang.Exception" to="editProviderForm">
+          <set name="flashScope.error" value="rootCauseException"/>
+        </transition>
         <transition to="theEnd"/>
     </action-state>
 
     <view-state id="deleteProviderForm">
       <on-entry>
-        <evaluate expression="requestParameters.providerKey" result="flowScope.providerKey"/>
-        <evaluate expression="requestParameters.providerClass" result="flowScope.providerClass"/>
+        <evaluate expression="requestParameters.providerKey" result="flashScope.providerKey"/>
+        <evaluate expression="requestParameters.providerClass" result="flashScope.providerClass"/>
       </on-entry>
       <transition on="delete" to="deleteProvider"/>
       <transition on="cancel" to="theEnd"/>
     </view-state>
 
     <action-state id="deleteProvider">
-        <evaluate expression="userGroupProviderHandler.deleteProvider(requestParameters.providerKey, requestParameters.providerClass)"/>
+        <evaluate expression="userGroupProviderHandler.deleteProvider(requestParameters.providerKey, requestParameters.providerClass, flashScope)"/>
+        <transition on-exception="java.lang.Exception" to="deleteProviderForm">
+          <set name="flashScope.error" value="rootCauseException"/>
+        </transition>
         <transition to="theEnd"/>
     </action-state>
 

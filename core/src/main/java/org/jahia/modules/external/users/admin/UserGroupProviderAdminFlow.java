@@ -73,15 +73,20 @@ package org.jahia.modules.external.users.admin;
 
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.users.*;
-import org.jahia.services.content.*;
+import org.jahia.services.content.JCRStoreProvider;
+import org.jahia.services.content.JCRStoreService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.webflow.core.collection.MutableAttributeMap;
 import org.springframework.webflow.core.collection.ParameterMap;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class UserGroupProviderAdminFlow implements Serializable {
     private static final Logger logger = LoggerFactory.getLogger(UserGroupProviderAdminFlow.class);
@@ -149,22 +154,22 @@ public class UserGroupProviderAdminFlow implements Serializable {
         }
     }
 
-    public void createProvider(ParameterMap parameters) {
+    public void createProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
         String providerClass = parameters.get("providerClass");
-        configurations.get(providerClass).create(parameters);
+        configurations.get(providerClass).create(parameters, flashScope);
     }
 
-    public void editProvider(ParameterMap parameters) {
+    public void editProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
         String providerKey = parameters.get("providerKey");
         String providerClass = parameters.get("providerClass");
-        configurations.get(providerClass).edit(providerKey, parameters);
+        configurations.get(providerClass).edit(providerKey, parameters, flashScope);
     }
 
-    public void deleteProvider(String providerKey, String providerClass) {
+    public void deleteProvider(String providerKey, String providerClass, MutableAttributeMap flashScope) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
-        configurations.get(providerClass).delete(providerKey);
+        configurations.get(providerClass).delete(providerKey, flashScope);
     }
 
     @Autowired

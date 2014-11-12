@@ -71,6 +71,7 @@
  */
 package org.jahia.modules.external.users;
 
+import org.springframework.webflow.core.collection.MutableAttributeMap;
 import org.springframework.webflow.core.collection.ParameterMap;
 
 import java.io.Serializable;
@@ -86,16 +87,16 @@ public interface UserGroupProviderConfiguration extends Serializable {
 
     String getCreateJSP();
 
-    boolean create(ParameterMap parameters);
+    void create(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception;
 
     boolean isEditSupported();
 
     String getEditJSP();
 
-    boolean edit(String providerKey, ParameterMap parameters);
+    void edit(String providerKey, ParameterMap parameters, MutableAttributeMap flashScope) throws Exception;
 
     boolean isDeleteSupported();
 
-    boolean delete(String providerKey);
+    void delete(String providerKey, MutableAttributeMap flashScope) throws Exception;
 
 }

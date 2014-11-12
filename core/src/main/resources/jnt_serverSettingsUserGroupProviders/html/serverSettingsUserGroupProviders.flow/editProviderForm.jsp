@@ -21,9 +21,14 @@
     <fmt:param value="${providerKey}"/>
 </fmt:message></h2>
 
+<c:if test="${not empty error}">
+    <div class="alert alert-error">${error}</div>
+</c:if>
+
 <form style="margin: 0;" action="${flowExecutionUrl}" method="post">
     <input type="hidden" name="providerKey" value="${providerKey}"/>
     <input type="hidden" name="providerClass" value="${providerClass}"/>
+    <input type="hidden" name="editJSP" value="${editJSP}"/>
 
     <jsp:include page="${editJSP}"/>
 
