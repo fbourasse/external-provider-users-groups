@@ -87,7 +87,7 @@ public interface UserGroupProviderConfiguration extends Serializable {
 
     String getCreateJSP();
 
-    void create(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception;
+    String create(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception;
 
     boolean isEditSupported();
 

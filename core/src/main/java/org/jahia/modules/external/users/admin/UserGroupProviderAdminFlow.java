@@ -73,6 +73,7 @@ package org.jahia.modules.external.users.admin;
 
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.users.*;
+import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.content.JCRStoreProvider;
 import org.jahia.services.content.JCRStoreService;
 import org.slf4j.Logger;
@@ -90,6 +91,7 @@ import java.util.Map;
 
 public class UserGroupProviderAdminFlow implements Serializable {
     private static final Logger logger = LoggerFactory.getLogger(UserGroupProviderAdminFlow.class);
+    private static final int CREATION_TIMEOUT = 10000;
 
     @Autowired
     private transient ExternalUserGroupServiceImpl externalUserGroupServiceImpl;
@@ -157,7 +159,14 @@ public class UserGroupProviderAdminFlow implements Serializable {
     public void createProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
         String providerClass = parameters.get("providerClass");
-        configurations.get(providerClass).create(parameters, flashScope);
+        String providerKey = configurations.get(providerClass).create(parameters, flashScope) + ".users";
+        JCRSessionFactory sessionFactory = jcrStoreService.getSessionFactory();
+        long endTime = System.currentTimeMillis() + CREATION_TIMEOUT;
+        while (System.currentTimeMillis() < endTime &&
+                (!sessionFactory.getProviders().containsKey(providerKey) ||
+                !sessionFactory.getProviders().get(providerKey).isAvailable())) {
+            // wait for provider availability if it's asynchronous
+        }
     }
 
     public void editProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
