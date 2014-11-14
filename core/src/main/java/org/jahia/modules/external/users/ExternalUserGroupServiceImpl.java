@@ -76,6 +76,8 @@ import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.services.SpringContextSingleton;
 import org.jahia.services.content.*;
+import org.jahia.services.sites.JahiaSite;
+import org.jahia.services.sites.JahiaSitesService;
 import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,23 +97,48 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
     private Map<String, UserGroupProviderConfiguration> providerConfigurations = new HashMap<String, UserGroupProviderConfiguration>();
 
     public void register(String providerKey, final UserGroupProvider userGroupProvider) {
-        final String usersFolderPath = "/users";
-        final String groupsFolderPath = "/groups";
+        register(providerKey, null, userGroupProvider);
+    }
+
+    public void register(String providerKey, final String siteKey, final UserGroupProvider userGroupProvider) {
+        final String usersFolderName = "users";
+        final String groupsFolderName = "groups";
 
         try {
             JCRTemplate.getInstance().doExecuteWithSystemSession(new JCRCallback<Object>() {
                 @Override
                 public Object doInJCR(JCRSessionWrapper session) throws RepositoryException {
+                    JCRNodeWrapper rootNode;
+                    if (siteKey == null) {
+                        rootNode = session.getNode("/");
+                    } else {
+                        rootNode = session.getNode("/sites/" + siteKey);
+                    }
+
                     boolean saveNeeded = false;
-                    JCRNodeWrapper node = session.getNode(usersFolderPath);
+                    JCRNodeWrapper node = rootNode;
+                    if (node.hasNode(usersFolderName)) {
+                        node = node.getNode(usersFolderName);
+                    } else {
+                        node = node.addNode(usersFolderName, "jnt:usersFolder");
+                        saveNeeded = true;
+                    }
                     if (!node.hasNode(PROVIDERS_MOUNT_CONTAINER)) {
                         node.addNode(PROVIDERS_MOUNT_CONTAINER, "jnt:usersFolder");
                         saveNeeded = true;
                     }
-                    node = session.getNode(groupsFolderPath);
-                    if (userGroupProvider.supportsGroups() && !node.hasNode(PROVIDERS_MOUNT_CONTAINER)) {
-                        node.addNode(PROVIDERS_MOUNT_CONTAINER, "jnt:groupsFolder");
-                        saveNeeded = true;
+                    if (userGroupProvider.supportsGroups()) {
+                        node = rootNode;
+                        if (node.hasNode(groupsFolderName)) {
+                            node = node.getNode(groupsFolderName);
+                        } else {
+                            node = node.addNode(groupsFolderName, "jnt:groupsFolder");
+                            saveNeeded = true;
+                        }
+                        if (!node.hasNode(PROVIDERS_MOUNT_CONTAINER)) {
+                            node.addNode(PROVIDERS_MOUNT_CONTAINER, "jnt:groupsFolder");
+                            saveNeeded = true;
+                        }
                     }
                     if (saveNeeded) {
                         session.save();
@@ -134,7 +161,7 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
                 ExternalContentStoreProvider userProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
                 userProvider.setKey(userProviderKey);
-                userProvider.setMountPoint(usersFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
+                userProvider.setMountPoint((siteKey == null ? "/" : "/sites/" + siteKey + "/") + usersFolderName + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
                 userProvider.setDataSource(usersDataSource);
                 userProvider.setExtendableTypes(Arrays.asList("nt:base"));
                 userProvider.setOverridableItems(Arrays.asList("jnt:user.*", "jnt:usersFolder.*", "mix:lastModified.*", "jmix:lastPublished.*"));
@@ -158,6 +185,7 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
                 UserGroupProviderRegistration registration = new UserGroupProviderRegistration();
                 registration.setUserProvider(userProvider);
+                registration.setSiteKey(siteKey);
                 registeredProviders.put(providerKey, registration);
 
                 userProvider.start();
@@ -170,7 +198,7 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
                     ExternalContentStoreProvider groupProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
                     groupProvider.setKey(groupProviderKey);
-                    groupProvider.setMountPoint(groupsFolderPath + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
+                    groupProvider.setMountPoint((siteKey == null ? "/" : "/sites/" + siteKey + "/")+ groupsFolderName + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
                     groupProvider.setDataSource(groupDataSource);
 
                     groupDataSource.setContentStoreProvider(groupProvider);

@@ -85,6 +85,7 @@ public class UserGroupProviderInfo implements Serializable {
     private boolean editSupported = false;
     private String editJSP;
     private boolean deleteSupported = false;
+    private String siteKey;
 
     public String getKey() {
         return key;
@@ -140,5 +141,13 @@ public class UserGroupProviderInfo implements Serializable {
 
     public void setDeleteSupported(boolean deleteSupported) {
         this.deleteSupported = deleteSupported;
+    }
+
+    public String getSiteKey() {
+        return siteKey;
+    }
+
+    public void setSiteKey(String siteKey) {
+        this.siteKey = siteKey;
     }
 }

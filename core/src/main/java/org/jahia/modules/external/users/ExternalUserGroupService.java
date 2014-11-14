@@ -78,6 +78,8 @@ public interface ExternalUserGroupService {
 
     void register(String providerKey, UserGroupProvider userGroupProvider);
 
+    void register(String providerKey, String siteKey, UserGroupProvider userGroupProvider);
+
     void unregister(String providerKey);
 
     void setConfiguration(String providerClass, UserGroupProviderConfiguration userGroupProviderConfig);

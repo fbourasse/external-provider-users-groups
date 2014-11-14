@@ -82,6 +82,7 @@ public class UserGroupProviderRegistration implements Serializable {
 
     private ExternalContentStoreProvider userProvider;
     private ExternalContentStoreProvider groupProvider;
+    private String siteKey;
 
     public ExternalContentStoreProvider getUserProvider() {
         return userProvider;
@@ -97,5 +98,13 @@ public class UserGroupProviderRegistration implements Serializable {
 
     public void setGroupProvider(ExternalContentStoreProvider groupProvider) {
         this.groupProvider = groupProvider;
+    }
+
+    public String getSiteKey() {
+        return siteKey;
+    }
+
+    public void setSiteKey(String siteKey) {
+        this.siteKey = siteKey;
     }
 }

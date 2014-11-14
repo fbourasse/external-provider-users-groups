@@ -46,6 +46,9 @@
         <th>
             <fmt:message key="label.userGroupProvider.supportsGroups"/>
         </th>
+        <th>
+            <fmt:message key="label.userGroupProvider.location"/>
+        </th>
         <th class="{sorter: false}">
             <fmt:message key="label.actions"/>
         </th>
@@ -65,6 +68,18 @@
             <td>
                 ${userGroupProvider.groupSupported}
 
+            </td>
+            <td>
+                <c:choose>
+                    <c:when test="${empty userGroupProvider.siteKey}">
+                        <fmt:message key="label.userGroupProvider.location.global"/>
+                    </c:when>
+                    <c:otherwise>
+                        <fmt:message key="label.userGroupProvider.location.local">
+                            <fmt:param value="${userGroupProvider.siteKey}"/>
+                        </fmt:message>
+                    </c:otherwise>
+                </c:choose>
             </td>
             <td>
                 <form style="margin: 0;" action="${flowExecutionUrl}" method="post">

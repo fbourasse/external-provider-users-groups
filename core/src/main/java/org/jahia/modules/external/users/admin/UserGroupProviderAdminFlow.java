@@ -117,6 +117,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
                 providerInfo.setEditJSP(configuration.getEditJSP());
                 providerInfo.setDeleteSupported(configuration.isDeleteSupported());
             }
+            providerInfo.setSiteKey(entry.getValue().getSiteKey());
             infos.add(providerInfo);
         }
         return infos;
