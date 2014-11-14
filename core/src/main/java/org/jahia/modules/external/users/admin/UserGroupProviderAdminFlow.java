@@ -91,7 +91,7 @@ import java.util.Map;
 
 public class UserGroupProviderAdminFlow implements Serializable {
     private static final Logger logger = LoggerFactory.getLogger(UserGroupProviderAdminFlow.class);
-    private static final int CREATION_TIMEOUT = 10000;
+    private static final int CREATION_TIMEOUT = 100000;
 
     @Autowired
     private transient ExternalUserGroupServiceImpl externalUserGroupServiceImpl;
@@ -174,11 +174,25 @@ public class UserGroupProviderAdminFlow implements Serializable {
         String providerKey = parameters.get("providerKey");
         String providerClass = parameters.get("providerClass");
         configurations.get(providerClass).edit(providerKey, parameters, flashScope);
+        providerKey += ".users";
+        JCRSessionFactory sessionFactory = jcrStoreService.getSessionFactory();
+        long endTime = System.currentTimeMillis() + CREATION_TIMEOUT;
+        while (System.currentTimeMillis() < endTime &&
+                (!sessionFactory.getProviders().containsKey(providerKey) ||
+                !sessionFactory.getProviders().get(providerKey).isAvailable())) {
+            // wait for provider availability if it's asynchronous
+        }
     }
 
     public void deleteProvider(String providerKey, String providerClass, MutableAttributeMap flashScope) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
         configurations.get(providerClass).delete(providerKey, flashScope);
+        providerKey += ".users";
+        JCRSessionFactory sessionFactory = jcrStoreService.getSessionFactory();
+        long endTime = System.currentTimeMillis() + CREATION_TIMEOUT;
+        while (System.currentTimeMillis() < endTime && sessionFactory.getProviders().containsKey(providerKey)) {
+            // wait for provider removal if it's asynchronous
+        }
     }
 
     @Autowired
