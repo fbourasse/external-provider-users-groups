@@ -80,6 +80,8 @@ import org.jahia.services.content.decorator.JCRUserNode;
 import org.jahia.services.usermanager.JahiaUser;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.services.usermanager.JahiaUserSplittingRule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
@@ -92,6 +94,7 @@ import static org.jahia.api.Constants.LIVE_WORKSPACE;
 
 public class UsersDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable {
 
+    private static Logger logger = LoggerFactory.getLogger(UsersDataSource.class);
     public static final HashSet<String> SUPPORTED_NODE_TYPES = new HashSet<String>(Arrays.asList("jnt:externalUser", "jnt:usersFolder"));
     private JahiaUserManagerService jahiaUserManagerService;
 
@@ -187,9 +190,13 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
             searchCriteria.put(JahiaUserManagerService.MULTI_CRITERIA_SEARCH_OPERATION, "and");
         }
         List<String> result = new ArrayList<String>();
-        JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
-        for (String userName : userGroupProvider.searchUsers(searchCriteria, externalQuery.getOffset(), externalQuery.getLimit())) {
-            result.add(userSplittingRule.getRelativePathForUsername(userName));
+        try {
+            JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
+            for (String userName : userGroupProvider.searchUsers(searchCriteria, externalQuery.getOffset(), externalQuery.getLimit())) {
+                result.add(userSplittingRule.getRelativePathForUsername(userName));
+            }
+        } catch (Exception e) {
+            logger.error("Error while executing query {} on provider {}, issue {}",new Object[]{externalQuery,userGroupProvider,e.getMessage()});
         }
         return result;
     }

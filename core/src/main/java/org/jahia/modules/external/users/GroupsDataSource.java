@@ -267,8 +267,12 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         SearchCriteriaHelper.getCriteriaFromConstraints(externalQuery.getConstraint(), searchCriteria, "groupname");
         searchCriteria.remove("jcr:language");
         List<String> result = new ArrayList<String>();
-        for (String groupName : userGroupProvider.searchGroups(searchCriteria, externalQuery.getOffset(), externalQuery.getLimit())) {
-            result.add("/" + groupName);
+        try {
+            for (String groupName : userGroupProvider.searchGroups(searchCriteria, externalQuery.getOffset(), externalQuery.getLimit())) {
+                result.add("/" + groupName);
+            }
+        } catch (Exception e) {
+            logger.error("Error while executing query {} on provider {}, issue {}",new Object[]{externalQuery,userGroupProvider,e.getMessage()});
         }
         return result;
     }
