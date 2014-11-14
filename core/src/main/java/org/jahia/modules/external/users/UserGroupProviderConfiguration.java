@@ -81,22 +81,59 @@ import java.io.Serializable;
  */
 public interface UserGroupProviderConfiguration extends Serializable {
 
+    /**
+     * @return the name of provider configuration
+     */
     String getName();
 
+    /**
+     * @return true if configuration creation is supported
+     */
     boolean isCreateSupported();
 
+    /**
+     * @return the path of the JSP included in the creation form
+     */
     String getCreateJSP();
 
+    /**
+     * Create configuration
+     * @param parameters the request parameters
+     * @param flashScope the scope to set variables necessary for a reload of creation form due to an exception
+     * @return the provider key
+     * @throws Exception
+     */
     String create(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception;
 
+    /**
+     * @return true if configuration edit is supported
+     */
     boolean isEditSupported();
 
+    /**
+     * @return the path of the JSP included in the edit form
+     */
     String getEditJSP();
 
+    /**
+     * Edit configuration
+     * @param parameters the request parameters
+     * @param flashScope the scope to set variables necessary for a reload of edit form due to an exception
+     * @throws Exception
+     */
     void edit(String providerKey, ParameterMap parameters, MutableAttributeMap flashScope) throws Exception;
 
+    /**
+     * @return true if configuration deletion is supported
+     */
     boolean isDeleteSupported();
 
+    /**
+     * Delete configuration
+     * @param providerKey the provider key
+     * @param flashScope the scope to set variables necessary for a reload of deletion form due to an exception
+     * @throws Exception
+     */
     void delete(String providerKey, MutableAttributeMap flashScope) throws Exception;
 
 }
