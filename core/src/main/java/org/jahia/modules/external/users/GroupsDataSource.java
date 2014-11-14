@@ -273,6 +273,9 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
             }
         } catch (Exception e) {
             logger.error("Error while executing query {} on provider {}, issue {}",new Object[]{externalQuery,userGroupProvider,e.getMessage()});
+            if(logger.isDebugEnabled()){
+                logger.debug(e.getMessage(),e);
+            }
         }
         return result;
     }
