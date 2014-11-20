@@ -79,7 +79,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jcr.RepositoryException;
-import java.util.Arrays;
 
 public class JCRExternalUserNode extends JCRUserNode {
 
@@ -87,17 +86,6 @@ public class JCRExternalUserNode extends JCRUserNode {
 
     public JCRExternalUserNode(JCRNodeWrapper node) {
         super(node);
-    }
-
-    @Override
-    public boolean verifyPassword(String userPassword) {
-        UsersDataSource dataSource = (UsersDataSource) ((ExternalContentStoreProvider) getProvider()).getDataSource();
-        return dataSource.getUserGroupProvider().verifyPassword(getName(), userPassword);
-    }
-
-    @Override
-    public boolean setPassword(String pwd) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -114,5 +102,16 @@ public class JCRExternalUserNode extends JCRUserNode {
         }
 
         return super.isPropertyEditable(name);
+    }
+
+    @Override
+    public boolean setPassword(String pwd) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean verifyPassword(String userPassword) {
+        UsersDataSource dataSource = (UsersDataSource) ((ExternalContentStoreProvider) getProvider()).getDataSource();
+        return dataSource.getUserGroupProvider().verifyPassword(getName(), userPassword);
     }
 }

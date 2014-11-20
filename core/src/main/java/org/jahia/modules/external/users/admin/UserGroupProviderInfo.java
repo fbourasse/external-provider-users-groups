@@ -78,73 +78,82 @@ import java.io.Serializable;
  */
 public class UserGroupProviderInfo implements Serializable {
 
-    private String key;
-    private String providerClass;
-    private boolean groupSupported;
-    private boolean running;
-    private boolean editSupported = false;
+    private static final long serialVersionUID = 8377758659660801865L;
+
+    private boolean deleteSupported;
+    
     private String editJSP;
-    private boolean deleteSupported = false;
+    
+    private boolean editSupported;
+    
+    private boolean groupSupported;
+    
+    private String key;
+    
+    private String providerClass;
+    
+    private boolean running;
+    
     private String siteKey;
+
+    public String getEditJSP() {
+        return editJSP;
+    }
 
     public String getKey() {
         return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
     }
 
     public String getProviderClass() {
         return providerClass;
     }
 
-    public void setProviderClass(String providerClass) {
-        this.providerClass = providerClass;
-    }
-
-    public boolean isGroupSupported() {
-        return groupSupported;
-    }
-
-    public void setGroupSupported(boolean groupSupported) {
-        this.groupSupported = groupSupported;
-    }
-
-    public boolean isRunning() {
-        return running;
-    }
-
-    public void setRunning(boolean running) {
-        this.running = running;
-    }
-
-    public boolean isEditSupported() {
-        return editSupported;
-    }
-
-    public void setEditSupported(boolean editSupported) {
-        this.editSupported = editSupported;
-    }
-
-    public String getEditJSP() {
-        return editJSP;
-    }
-
-    public void setEditJSP(String editJSP) {
-        this.editJSP = editJSP;
+    public String getSiteKey() {
+        return siteKey;
     }
 
     public boolean isDeleteSupported() {
         return deleteSupported;
     }
 
+    public boolean isEditSupported() {
+        return editSupported;
+    }
+
+    public boolean isGroupSupported() {
+        return groupSupported;
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
+
     public void setDeleteSupported(boolean deleteSupported) {
         this.deleteSupported = deleteSupported;
     }
 
-    public String getSiteKey() {
-        return siteKey;
+    public void setEditJSP(String editJSP) {
+        this.editJSP = editJSP;
+    }
+
+    public void setEditSupported(boolean editSupported) {
+        this.editSupported = editSupported;
+    }
+
+    public void setGroupSupported(boolean groupSupported) {
+        this.groupSupported = groupSupported;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public void setProviderClass(String providerClass) {
+        this.providerClass = providerClass;
+    }
+
+    public void setRunning(boolean running) {
+        this.running = running;
     }
 
     public void setSiteKey(String siteKey) {

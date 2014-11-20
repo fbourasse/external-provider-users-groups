@@ -85,25 +85,28 @@ import org.slf4j.LoggerFactory;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
+
 import java.util.*;
 
 public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.Referenceable {
 
-    public static final HashSet<String> SUPPORTED_NODE_TYPES = new HashSet<String>(Arrays.asList("jnt:group", "jnt:members", "jnt:member"));
-
     private static final Logger logger = LoggerFactory.getLogger(GroupsDataSource.class);
 
-    private static final String MEMBERS_ROOT_NAME = "j:members";
-    private static final String MEMBER_REF_ATTR = "j:member";
     private static final String MEMBER_PATHS_SESSION_VAR = "memberPathsByGroupName";
+
+    private static final String MEMBER_REF_ATTR = "j:member";
+    
+    private static final String MEMBERS_ROOT_NAME = "j:members";
+    
+    public static final HashSet<String> SUPPORTED_NODE_TYPES = new HashSet<String>(Arrays.asList("jnt:group", "jnt:members", "jnt:member"));
+
+    private ExternalContentStoreProvider contentStoreProvider;
 
     private JahiaUserManagerService jahiaUserManagerService;
 
-    private UsersDataSource usersDataSource;
-
     private UserGroupProvider userGroupProvider;
 
-    private ExternalContentStoreProvider contentStoreProvider;
+    private UsersDataSource usersDataSource;
 
     @Override
     public List<String> getChildren(String path) throws RepositoryException {
@@ -145,30 +148,20 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         return l;
     }
 
-    private List<String> getMembers(String groupName) throws RepositoryException {
-        Map<String, Object> sessionVariables = ExternalContentStoreProvider.getCurrentSession().getSessionVariables();
-        Map<String, List<String>> memberPathsByGroupName;
-        if (sessionVariables.containsKey(MEMBER_PATHS_SESSION_VAR)) {
-            memberPathsByGroupName = (Map<String, List<String>>) sessionVariables.get(MEMBER_PATHS_SESSION_VAR);
-        } else {
-            memberPathsByGroupName = new HashMap<String, List<String>>();
-            sessionVariables.put(MEMBER_PATHS_SESSION_VAR, memberPathsByGroupName);
+    public ExternalContentStoreProvider getContentStoreProvider() {
+        return contentStoreProvider;
+    }
+
+    private ExternalData getGroupData(JahiaGroup group) {
+        String path = "/" + group.getName();
+        Map<String,String[]> properties = new HashMap<String, String[]>();
+        Properties groupProperties = group.getProperties();
+        for (Object key : groupProperties.keySet()) {
+            properties.put((String) key, new String[]{(String) groupProperties.get(key)});
         }
-        if (memberPathsByGroupName.containsKey(groupName)) {
-            return memberPathsByGroupName.get(groupName);
-        } else {
-            ArrayList<String> paths = new ArrayList<String>();
-            JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
-            for (Member member : userGroupProvider.getGroupMembers(groupName)) {
-                if (member.getType() == Member.MemberType.GROUP) {
-                    paths.add(contentStoreProvider.getMountPoint() + "/" + member.getName());
-                } else {
-                    paths.add(usersDataSource.getContentStoreProvider().getMountPoint() + userSplittingRule.getRelativePathForUsername(member.getName()));
-                }
-            }
-            memberPathsByGroupName.put(groupName, paths);
-            return paths;
-        }
+        properties.put("j:external", new String[]{"true"});
+        properties.put("j:externalSource", new String[]{StringUtils.removeEnd(contentStoreProvider.getKey(), ".groups")});
+        return new ExternalData(path, path, "jnt:group", properties);
     }
 
     @Override
@@ -236,6 +229,70 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         return new ExternalData(path, path, "jnt:member", properties);
     }
 
+    @SuppressWarnings("unchecked")
+    private List<String> getMembers(String groupName) throws RepositoryException {
+        Map<String, Object> sessionVariables = ExternalContentStoreProvider.getCurrentSession().getSessionVariables();
+        Map<String, List<String>> memberPathsByGroupName;
+        if (sessionVariables.containsKey(MEMBER_PATHS_SESSION_VAR)) {
+            memberPathsByGroupName = (Map<String, List<String>>) sessionVariables.get(MEMBER_PATHS_SESSION_VAR);
+        } else {
+            memberPathsByGroupName = new HashMap<String, List<String>>();
+            sessionVariables.put(MEMBER_PATHS_SESSION_VAR, memberPathsByGroupName);
+        }
+        if (memberPathsByGroupName.containsKey(groupName)) {
+            return memberPathsByGroupName.get(groupName);
+        } else {
+            ArrayList<String> paths = new ArrayList<String>();
+            JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
+            for (Member member : userGroupProvider.getGroupMembers(groupName)) {
+                if (member.getType() == Member.MemberType.GROUP) {
+                    paths.add(contentStoreProvider.getMountPoint() + "/" + member.getName());
+                } else {
+                    paths.add(usersDataSource.getContentStoreProvider().getMountPoint() + userSplittingRule.getRelativePathForUsername(member.getName()));
+                }
+            }
+            memberPathsByGroupName.put(groupName, paths);
+            return paths;
+        }
+    }
+
+    @Override
+    public List<String> getReferringProperties(String identifier, String propertyName) {
+        if (MEMBER_REF_ATTR.equals(propertyName)) {
+            String principalId = identifier;
+            List<String> groups = null;
+            ExternalContentStoreProvider provider = null;
+
+            if (principalId.startsWith("/")) {
+                // already an externalId -> identifier of a group
+                groups = userGroupProvider.getMembership(new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.GROUP));
+                provider = contentStoreProvider;
+            } else {
+                try {
+                    provider = usersDataSource.getContentStoreProvider();
+                    if (identifier.startsWith(provider.getId())) {
+                        principalId = provider.getExternalProviderInitializerService().getExternalIdentifier(identifier);
+                        if (principalId != null && principalId.startsWith("/")) {
+                            groups = userGroupProvider.getMembership(new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.USER));
+                        }
+                    }
+                } catch (RepositoryException e) {
+                    logger.debug("Error while treating member id as an external user one", e);
+                }
+            }
+
+            List<String> properties = new ArrayList<String>();
+            if (groups != null && !groups.isEmpty()) {
+                for (String group : groups) {
+                    properties.add("/" + group + "/" + MEMBERS_ROOT_NAME + provider.getMountPoint() + principalId + "/" + MEMBER_REF_ATTR);
+                }
+            }
+            return properties;
+        }
+
+        return null;
+    }
+
     @Override
     public Set<String> getSupportedNodeTypes() {
         return SUPPORTED_NODE_TYPES;
@@ -280,72 +337,19 @@ public class GroupsDataSource implements ExternalDataSource, ExternalDataSource.
         return result;
     }
 
-    private ExternalData getGroupData(JahiaGroup group) {
-        String path = "/" + group.getName();
-        Map<String,String[]> properties = new HashMap<String, String[]>();
-        Properties groupProperties = group.getProperties();
-        for (Object key : groupProperties.keySet()) {
-            properties.put((String) key, new String[]{(String) groupProperties.get(key)});
-        }
-        properties.put("j:external", new String[]{"true"});
-        properties.put("j:externalSource", new String[]{StringUtils.removeEnd(contentStoreProvider.getKey(), ".groups")});
-        return new ExternalData(path, path, "jnt:group", properties);
-    }
-
-    @Override
-    public List<String> getReferringProperties(String identifier, String propertyName) {
-        if (MEMBER_REF_ATTR.equals(propertyName)) {
-            String principalId = identifier;
-            List<String> groups = null;
-            ExternalContentStoreProvider provider = null;
-
-            if (principalId.startsWith("/")) {
-                // already an externalId -> identifier of a group
-                groups = userGroupProvider.getMembership(new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.GROUP));
-                provider = contentStoreProvider;
-            } else {
-                try {
-                    provider = usersDataSource.getContentStoreProvider();
-                    if (identifier.startsWith(provider.getId())) {
-                        principalId = provider.getExternalProviderInitializerService().getExternalIdentifier(identifier);
-                        if (principalId != null && principalId.startsWith("/")) {
-                            groups = userGroupProvider.getMembership(new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.USER));
-                        }
-                    }
-                } catch (RepositoryException e) {
-                    logger.debug("Error while treating member id as an external user one", e);
-                }
-            }
-
-            List<String> properties = new ArrayList<String>();
-            if (groups != null && !groups.isEmpty()) {
-                for (String group : groups) {
-                    properties.add("/" + group + "/" + MEMBERS_ROOT_NAME + provider.getMountPoint() + principalId + "/" + MEMBER_REF_ATTR);
-                }
-            }
-            return properties;
-        }
-
-        return null;
+    public void setContentStoreProvider(ExternalContentStoreProvider contentStoreProvider) {
+        this.contentStoreProvider = contentStoreProvider;
     }
 
     public void setJahiaUserManagerService(JahiaUserManagerService jahiaUserManagerService) {
         this.jahiaUserManagerService = jahiaUserManagerService;
     }
 
-    public void setUsersDataSource(UsersDataSource usersDataSource) {
-        this.usersDataSource = usersDataSource;
-    }
-
     public void setUserGroupProvider(UserGroupProvider userGroupProvider) {
         this.userGroupProvider = userGroupProvider;
     }
 
-    public ExternalContentStoreProvider getContentStoreProvider() {
-        return contentStoreProvider;
-    }
-
-    public void setContentStoreProvider(ExternalContentStoreProvider contentStoreProvider) {
-        this.contentStoreProvider = contentStoreProvider;
+    public void setUsersDataSource(UsersDataSource usersDataSource) {
+        this.usersDataSource = usersDataSource;
     }
 }

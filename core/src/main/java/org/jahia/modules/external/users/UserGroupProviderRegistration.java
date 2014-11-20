@@ -80,31 +80,35 @@ import java.io.Serializable;
  */
 public class UserGroupProviderRegistration implements Serializable {
 
-    private ExternalContentStoreProvider userProvider;
+    private static final long serialVersionUID = 2151331267633066668L;
+    
     private ExternalContentStoreProvider groupProvider;
+    
     private String siteKey;
-
-    public ExternalContentStoreProvider getUserProvider() {
-        return userProvider;
-    }
-
-    public void setUserProvider(ExternalContentStoreProvider userProvider) {
-        this.userProvider = userProvider;
-    }
+    
+    private ExternalContentStoreProvider userProvider;
 
     public ExternalContentStoreProvider getGroupProvider() {
         return groupProvider;
-    }
-
-    public void setGroupProvider(ExternalContentStoreProvider groupProvider) {
-        this.groupProvider = groupProvider;
     }
 
     public String getSiteKey() {
         return siteKey;
     }
 
+    public ExternalContentStoreProvider getUserProvider() {
+        return userProvider;
+    }
+
+    public void setGroupProvider(ExternalContentStoreProvider groupProvider) {
+        this.groupProvider = groupProvider;
+    }
+
     public void setSiteKey(String siteKey) {
         this.siteKey = siteKey;
+    }
+
+    public void setUserProvider(ExternalContentStoreProvider userProvider) {
+        this.userProvider = userProvider;
     }
 }

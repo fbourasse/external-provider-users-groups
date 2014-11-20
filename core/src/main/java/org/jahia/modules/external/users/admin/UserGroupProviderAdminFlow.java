@@ -76,8 +76,6 @@ import org.jahia.modules.external.users.*;
 import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.content.JCRStoreProvider;
 import org.jahia.services.content.JCRStoreService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.webflow.core.collection.MutableAttributeMap;
@@ -90,7 +88,9 @@ import java.util.List;
 import java.util.Map;
 
 public class UserGroupProviderAdminFlow implements Serializable {
-    private static final Logger logger = LoggerFactory.getLogger(UserGroupProviderAdminFlow.class);
+
+    private static final long serialVersionUID = 4171622809934546645L;
+
     private static final int CREATION_TIMEOUT = 100000;
 
     @Autowired

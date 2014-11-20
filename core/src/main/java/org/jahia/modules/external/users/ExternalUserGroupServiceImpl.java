@@ -76,8 +76,6 @@ import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.services.SpringContextSingleton;
 import org.jahia.services.content.*;
-import org.jahia.services.sites.JahiaSite;
-import org.jahia.services.sites.JahiaSitesService;
 import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
