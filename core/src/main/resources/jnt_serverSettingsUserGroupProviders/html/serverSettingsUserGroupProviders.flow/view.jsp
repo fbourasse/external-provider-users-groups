@@ -49,6 +49,9 @@
         <th>
             <fmt:message key="label.userGroupProvider.location"/>
         </th>
+            <th width="100px">
+                <fmt:message key="label.status"/>
+            </th>
         <th class="{sorter: false}">
             <fmt:message key="label.actions"/>
         </th>
@@ -58,7 +61,7 @@
     <tbody>
 
     <c:forEach items="${userGroupProviders}" var="userGroupProvider" varStatus="loopStatus">
-        <tr${not userGroupProvider.running ? ' class="warning"' : ''}>
+        <tr>
             <td>
                 ${userGroupProvider.key}
             </td>
@@ -78,6 +81,20 @@
                         <fmt:message key="label.userGroupProvider.location.local">
                             <fmt:param value="${userGroupProvider.siteKey}"/>
                         </fmt:message>
+                    </c:otherwise>
+                </c:choose>
+            </td>
+            <td>
+                <c:choose>
+                    <c:when test="${userGroupProvider.running}">
+                <span class="badge badge-success">
+                    <fmt:message key="label.userGroupProvider.running"/>
+                </span>
+                    </c:when>
+                    <c:otherwise>
+                <span class="badge badge-warning">
+                    <fmt:message key="label.userGroupProvider.stopped"/>
+                </span>
                     </c:otherwise>
                 </c:choose>
             </td>
@@ -111,8 +128,8 @@
                     </c:if>
 
                     <c:if test="${userGroupProvider.deleteSupported}">
-                        <button class="btn" type="submit" name="_eventId_deleteProvider">
-                            <i class="icon icon-trash"></i>&nbsp;<fmt:message key="label.delete"/>
+                        <button class="btn btn-danger" type="submit" name="_eventId_deleteProvider">
+                            <i class="icon icon-white icon-trash"></i>&nbsp;<fmt:message key="label.delete"/>
                         </button>
                     </c:if>
                 </form>
