@@ -103,10 +103,7 @@ public class Member {
 
         Member member = (Member) o;
 
-        if (!name.equals(member.name)) return false;
-        if (type != member.type) return false;
-
-        return true;
+        return (type != member.type) && name.equals(member.name);
     }
 
     @Override

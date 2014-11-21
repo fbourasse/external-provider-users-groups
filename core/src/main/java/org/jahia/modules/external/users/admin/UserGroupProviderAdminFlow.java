@@ -89,38 +89,36 @@ import java.util.Map;
 
 public class UserGroupProviderAdminFlow implements Serializable {
 
-    private static final long serialVersionUID = 4171622809934546645L;
+    private static final long AVAILABILITY_TIMEOUT = 60 * 1000L;
 
-    private static final int CREATION_TIMEOUT = 100000;
+    private static final long serialVersionUID = 4171622809934546645L;
 
     @Autowired
     private transient ExternalUserGroupServiceImpl externalUserGroupServiceImpl;
 
     private transient JCRStoreService jcrStoreService;
 
-    public List<UserGroupProviderInfo> getUserGroupProviders() {
-        ArrayList<UserGroupProviderInfo> infos = new ArrayList<UserGroupProviderInfo>();
-        Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
-        for (Map.Entry<String, UserGroupProviderRegistration> entry : externalUserGroupServiceImpl.getRegisteredProviders().entrySet()) {
-            UserGroupProviderInfo providerInfo = new UserGroupProviderInfo();
-            providerInfo.setKey(entry.getKey());
-            UsersDataSource dataSource = (UsersDataSource) entry.getValue().getUserProvider().getDataSource();
-            UserGroupProvider userGroupProvider = dataSource.getUserGroupProvider();
-            String userGroupProviderClass = userGroupProvider.getClass().getName();
-            providerInfo.setProviderClass(userGroupProviderClass);
-            providerInfo.setGroupSupported(userGroupProvider.supportsGroups());
-            providerInfo.setRunning(providers.containsKey(entry.getKey() + ".users") && providers.get(entry.getKey() + ".users").isAvailable());
-            Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
-            if (configurations.containsKey(userGroupProviderClass)) {
-                UserGroupProviderConfiguration configuration = configurations.get(userGroupProviderClass);
-                providerInfo.setEditSupported(configuration.isEditSupported());
-                providerInfo.setEditJSP(configuration.getEditJSP());
-                providerInfo.setDeleteSupported(configuration.isDeleteSupported());
-            }
-            providerInfo.setSiteKey(entry.getValue().getSiteKey());
-            infos.add(providerInfo);
-        }
-        return infos;
+    public void createProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
+        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
+        String providerClass = parameters.get("providerClass");
+        String providerKey = configurations.get(providerClass).create(parameters, flashScope) + ".users";
+        wait(providerKey, true);
+    }
+
+    public void deleteProvider(String providerKey, String providerClass, MutableAttributeMap flashScope) throws Exception {
+        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
+        configurations.get(providerClass).delete(providerKey, flashScope);
+        providerKey += ".users";
+        wait(providerKey, false);
+    }
+
+    public void editProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
+        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
+        String providerKey = parameters.get("providerKey");
+        String providerClass = parameters.get("providerClass");
+        configurations.get(providerClass).edit(providerKey, parameters, flashScope);
+        providerKey += ".users";
+        wait(providerKey, true);
     }
 
     public Map<String, UserGroupProviderConfiguration> getCreateConfigurations() {
@@ -133,16 +131,30 @@ public class UserGroupProviderAdminFlow implements Serializable {
         return map;
     }
 
-    public void suspendProvider(String providerKey) {
-        UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(providerKey);
-        JCRStoreProvider userProvider = registration.getUserProvider();
-        if (userProvider != null) {
-            userProvider.stop();
+    public List<UserGroupProviderInfo> getUserGroupProviders() {
+        ArrayList<UserGroupProviderInfo> infos = new ArrayList<UserGroupProviderInfo>();
+        Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
+        for (Map.Entry<String, UserGroupProviderRegistration> entry : externalUserGroupServiceImpl.getRegisteredProviders().entrySet()) {
+            UserGroupProviderInfo providerInfo = new UserGroupProviderInfo();
+            providerInfo.setKey(entry.getKey());
+            UsersDataSource dataSource = (UsersDataSource) entry.getValue().getUserProvider().getDataSource();
+            UserGroupProvider userGroupProvider = dataSource.getUserGroupProvider();
+            String userGroupProviderClass = userGroupProvider.getClass().getName();
+            providerInfo.setProviderClass(userGroupProviderClass);
+            providerInfo.setGroupSupported(userGroupProvider.supportsGroups());
+            JCRStoreProvider prov = providers.get(entry.getKey() + ".users");
+            providerInfo.setRunning(prov != null && prov.isAvailable());
+            Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
+            UserGroupProviderConfiguration configuration = configurations.get(userGroupProviderClass);
+            if (configuration != null) {
+                providerInfo.setEditSupported(configuration.isEditSupported());
+                providerInfo.setEditJSP(configuration.getEditJSP());
+                providerInfo.setDeleteSupported(configuration.isDeleteSupported());
+            }
+            providerInfo.setSiteKey(entry.getValue().getSiteKey());
+            infos.add(providerInfo);
         }
-        JCRStoreProvider groupProvider = registration.getGroupProvider();
-        if (groupProvider != null) {
-            groupProvider.stop();
-        }
+        return infos;
     }
 
     public void resumeProvider(String providerKey) throws JahiaInitializationException {
@@ -157,47 +169,38 @@ public class UserGroupProviderAdminFlow implements Serializable {
         }
     }
 
-    public void createProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
-        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
-        String providerClass = parameters.get("providerClass");
-        String providerKey = configurations.get(providerClass).create(parameters, flashScope) + ".users";
-        JCRSessionFactory sessionFactory = jcrStoreService.getSessionFactory();
-        long endTime = System.currentTimeMillis() + CREATION_TIMEOUT;
-        while (System.currentTimeMillis() < endTime &&
-                (!sessionFactory.getProviders().containsKey(providerKey) ||
-                !sessionFactory.getProviders().get(providerKey).isAvailable())) {
-            // wait for provider availability if it's asynchronous
-        }
-    }
-
-    public void editProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
-        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
-        String providerKey = parameters.get("providerKey");
-        String providerClass = parameters.get("providerClass");
-        configurations.get(providerClass).edit(providerKey, parameters, flashScope);
-        providerKey += ".users";
-        JCRSessionFactory sessionFactory = jcrStoreService.getSessionFactory();
-        long endTime = System.currentTimeMillis() + CREATION_TIMEOUT;
-        while (System.currentTimeMillis() < endTime &&
-                (!sessionFactory.getProviders().containsKey(providerKey) ||
-                !sessionFactory.getProviders().get(providerKey).isAvailable())) {
-            // wait for provider availability if it's asynchronous
-        }
-    }
-
-    public void deleteProvider(String providerKey, String providerClass, MutableAttributeMap flashScope) throws Exception {
-        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
-        configurations.get(providerClass).delete(providerKey, flashScope);
-        providerKey += ".users";
-        JCRSessionFactory sessionFactory = jcrStoreService.getSessionFactory();
-        long endTime = System.currentTimeMillis() + CREATION_TIMEOUT;
-        while (System.currentTimeMillis() < endTime && sessionFactory.getProviders().containsKey(providerKey)) {
-            // wait for provider removal if it's asynchronous
-        }
-    }
-
     @Autowired
     public void setJcrStoreService(@Value("#{JCRStoreService}") JCRStoreService jcrStoreService) {
         this.jcrStoreService = jcrStoreService;
+    }
+
+    public void suspendProvider(String providerKey) {
+        UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(providerKey);
+        JCRStoreProvider userProvider = registration.getUserProvider();
+        if (userProvider != null) {
+            userProvider.stop();
+        }
+        JCRStoreProvider groupProvider = registration.getGroupProvider();
+        if (groupProvider != null) {
+            groupProvider.stop();
+        }
+    }
+
+    private void wait(String providerKey, boolean shouldBeAvailable) {
+        JCRSessionFactory sessionFactory = jcrStoreService.getSessionFactory();
+        
+        long endTime = System.currentTimeMillis() + AVAILABILITY_TIMEOUT;
+        while (System.currentTimeMillis() < endTime
+                && (shouldBeAvailable
+                        && (!sessionFactory.getProviders().containsKey(providerKey) || !sessionFactory.getProviders()
+                                .get(providerKey).isAvailable()) || (!shouldBeAvailable && sessionFactory
+                        .getProviders().containsKey(providerKey)))) {
+            // wait for provider availability / unavilability if it's asynchronous
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
     }
 }
