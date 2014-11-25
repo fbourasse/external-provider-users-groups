@@ -20,7 +20,7 @@
 
 
 <h2><fmt:message key="label.userGroupProvider.create">
-    <fmt:param value="${providerName}"/>
+    <fmt:param value="${not empty providerName ? providerName : 'N/A'}"/>
 </fmt:message></h2>
 
 <c:if test="${not empty error}">
