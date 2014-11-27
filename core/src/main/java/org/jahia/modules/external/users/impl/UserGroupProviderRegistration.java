@@ -69,58 +69,67 @@
  *
  *     For more information, please visit http://www.jahia.com
  */
-package org.jahia.modules.external.users;
+package org.jahia.modules.external.users.impl;
 
 import org.jahia.modules.external.ExternalContentStoreProvider;
-import org.jahia.modules.external.ExternalNodeImpl;
-import org.jahia.services.content.JCRNodeWrapper;
-import org.jahia.services.content.decorator.JCRUserNode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.jcr.RepositoryException;
+import java.io.Serializable;
 
 /**
- * Extension of the user node in JCR to support external providers. 
+ * Class to represent a user and group provider registration
  */
-public class JCRExternalUserNode extends JCRUserNode {
+public class UserGroupProviderRegistration implements Serializable {
 
-    private static final Logger logger = LoggerFactory.getLogger(JCRExternalUserNode.class);
+    private static final long serialVersionUID = 2151331267633066668L;
+    
+    private ExternalContentStoreProvider groupProvider;
+    
+    private String siteKey;
+    
+    private ExternalContentStoreProvider userProvider;
+    
+    /**
+     * Initializes an instance of this class.
+     */
+    public UserGroupProviderRegistration() {
+        super();
+    }
 
     /**
      * Initializes an instance of this class.
      * 
-     * @param node
-     *            the underlying JCR node
+     * @param siteKey
+     *            the target site key
+     * @param userProvider
+     *            the user provider to be registered
      */
-    public JCRExternalUserNode(JCRNodeWrapper node) {
-        super(node);
+    public UserGroupProviderRegistration(String siteKey, ExternalContentStoreProvider userProvider) {
+        this();
+        this.siteKey = siteKey;
+        this.userProvider = userProvider;
     }
 
-    @Override
-    public boolean isPropertyEditable(String name) {
-        if (node.getRealNode() instanceof ExternalNodeImpl) {
-            ExternalNodeImpl externalNode = (ExternalNodeImpl) node.getRealNode();
-            try {
-                if (!externalNode.canItemBeExtended(externalNode.getPropertyDefinition(name))) {
-                    return false;
-                }
-            } catch (RepositoryException e) {
-                logger.error("Error while verifying definition of property " + name, e);
-            }
-        }
-
-        return super.isPropertyEditable(name);
+    public ExternalContentStoreProvider getGroupProvider() {
+        return groupProvider;
     }
 
-    @Override
-    public boolean setPassword(String pwd) {
-        throw new UnsupportedOperationException();
+    public String getSiteKey() {
+        return siteKey;
     }
 
-    @Override
-    public boolean verifyPassword(String userPassword) {
-        UserDataSource dataSource = (UserDataSource) ((ExternalContentStoreProvider) getProvider()).getDataSource();
-        return dataSource.getUserGroupProvider().verifyPassword(getName(), userPassword);
+    public ExternalContentStoreProvider getUserProvider() {
+        return userProvider;
+    }
+
+    public void setGroupProvider(ExternalContentStoreProvider groupProvider) {
+        this.groupProvider = groupProvider;
+    }
+
+    public void setSiteKey(String siteKey) {
+        this.siteKey = siteKey;
+    }
+
+    public void setUserProvider(ExternalContentStoreProvider userProvider) {
+        this.userProvider = userProvider;
     }
 }

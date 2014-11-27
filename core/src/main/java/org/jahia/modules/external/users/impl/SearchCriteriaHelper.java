@@ -69,7 +69,7 @@
  *
  *     For more information, please visit http://www.jahia.com
  */
-package org.jahia.modules.external.users;
+package org.jahia.modules.external.users.impl;
 
 import org.apache.jackrabbit.commons.query.qom.Operator;
 import org.jahia.utils.Patterns;

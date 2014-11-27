@@ -69,11 +69,14 @@
  *
  *     For more information, please visit http://www.jahia.com
  */
-package org.jahia.modules.external.users;
+package org.jahia.modules.external.users.impl;
 
 import org.apache.commons.lang.StringUtils;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
+import org.jahia.modules.external.users.ExternalUserGroupService;
+import org.jahia.modules.external.users.UserGroupProvider;
+import org.jahia.modules.external.users.UserGroupProviderConfiguration;
 import org.jahia.services.SpringContextSingleton;
 import org.jahia.services.content.*;
 import org.jahia.settings.SettingsBean;

@@ -73,6 +73,9 @@ package org.jahia.modules.external.users.admin;
 
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.users.*;
+import org.jahia.modules.external.users.impl.ExternalUserGroupServiceImpl;
+import org.jahia.modules.external.users.impl.UserDataSource;
+import org.jahia.modules.external.users.impl.UserGroupProviderRegistration;
 import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.content.JCRStoreProvider;
 import org.jahia.services.content.JCRStoreService;

@@ -69,13 +69,15 @@
  *
  *     For more information, please visit http://www.jahia.com
  */
-package org.jahia.modules.external.users;
+package org.jahia.modules.external.users.impl;
 
 import org.apache.commons.lang.StringUtils;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
+import org.jahia.modules.external.users.UserGroupProvider;
+import org.jahia.modules.external.users.UserNotFoundException;
 import org.jahia.services.content.decorator.JCRUserNode;
 import org.jahia.services.usermanager.JahiaUser;
 import org.jahia.services.usermanager.JahiaUserManagerService;

@@ -72,7 +72,8 @@
 package org.jahia.test.external.users;
 
 import com.google.common.collect.Sets;
-import org.jahia.modules.external.users.JCRExternalUserNode;
+
+import org.jahia.modules.external.users.impl.JCRExternalUserNode;
 import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.decorator.JCRGroupNode;
 import org.jahia.services.content.decorator.JCRUserNode;
@@ -84,6 +85,7 @@ import org.junit.Test;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
+
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
