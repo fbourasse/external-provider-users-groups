@@ -71,45 +71,86 @@
  */
 package org.jahia.modules.external.users;
 
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Class used to describe a member with a name and a type (user or group)
  */
 public class Member {
 
-    public enum MemberType {USER, GROUP};
+    /**
+     * Supported group member types. 
+     */
+    public enum MemberType {
+        USER, GROUP
+    };
 
+    private int hash;
+    
     private String name;
 
     private MemberType type;
 
+    /**
+     * Initializes an instance of this class.
+     * 
+     * @param name
+     *            the name of the group member
+     * @param type
+     *            the member type
+     */
     public Member(String name, MemberType type) {
         this.name = name;
         this.type = type;
     }
 
+    /**
+     * Returns the name of the group member.
+     * 
+     * @return the name of the group member
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Returns the type of the group member.
+     * 
+     * @return the type of the group member
+     */
     public MemberType getType() {
         return type;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
 
-        Member member = (Member) o;
+        if (null == o || o.getClass() != this.getClass()) {
+            return false;
+        }
 
-        return (type != member.type) && name.equals(member.name);
+        Member otherMember = (Member) o;
+
+        return (type == otherMember.type) && StringUtils.equals(name, otherMember.name);
+    }
+
+    private int getHashCode() {
+        int iTotal = 17;
+        iTotal = 37 * iTotal + (name != null ? name.hashCode() : 0);
+        iTotal = 37 * iTotal + (type != null ? type.hashCode() : 0);
+
+        return iTotal;
     }
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + type.hashCode();
-        return result;
+        if (hash == 0) {
+            hash = getHashCode();
+        }
+        
+        return hash;
     }
 }

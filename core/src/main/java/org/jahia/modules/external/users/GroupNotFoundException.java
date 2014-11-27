@@ -72,22 +72,48 @@
 package org.jahia.modules.external.users;
 
 /**
+ * This exception is thrown when the group could not be found in the underlying provider.
+ * 
  * @author kevan
  */
 public class GroupNotFoundException extends Exception {
     private static final long serialVersionUID = 1030373706107166645L;
 
+    /**
+     * Initializes an instance of this class.
+     */
     public GroupNotFoundException() {
+        super();
     }
 
+    /**
+     * Initializes an instance of this class.
+     * 
+     * @param message
+     *            detailed error message
+     */
     public GroupNotFoundException(String message) {
         super(message);
     }
 
+    /**
+     * Initializes an instance of this class.
+     * 
+     * @param message
+     *            detailed error message
+     * @param cause
+     *            the original cause of the error
+     */
     public GroupNotFoundException(String message, Throwable cause) {
         super(message, cause);
     }
 
+    /**
+     * Initializes an instance of this class.
+     * 
+     * @param cause
+     *            the original cause of the error
+     */
     public GroupNotFoundException(Throwable cause) {
         super(cause);
     }

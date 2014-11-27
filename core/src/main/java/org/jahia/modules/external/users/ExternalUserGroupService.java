@@ -76,12 +76,44 @@ package org.jahia.modules.external.users;
  */
 public interface ExternalUserGroupService {
 
-    void register(String providerKey, UserGroupProvider userGroupProvider);
-
+    /**
+     * Perform registration of a user/group provider with the specified key targeted for the defined site.
+     * 
+     * @param providerKey
+     *            the key to register the provider under
+     * @param siteKey
+     *            the key of the target site
+     * @param userGroupProvider
+     *            the user/group provider instance
+     */
     void register(String providerKey, String siteKey, UserGroupProvider userGroupProvider);
 
-    void unregister(String providerKey);
+    /**
+     * Perform registration of a user/group provider with the specified key.
+     * 
+     * @param providerKey
+     *            the key to register the provider under
+     * @param userGroupProvider
+     *            the user/group provider instance
+     */
+    void register(String providerKey, UserGroupProvider userGroupProvider);
 
+    /**
+     * Sets the provider configuration for the specified provider class.
+     * 
+     * @param providerClass
+     *            the fully-qualified class name of the provider to set configuratoin for
+     * @param userGroupProviderConfig
+     *            the configuration object
+     */
     void setConfiguration(String providerClass, UserGroupProviderConfiguration userGroupProviderConfig);
+
+    /**
+     * Unregisters the user/group provider for the specified key.
+     * 
+     * @param providerKey
+     *            the key of the provider to be unregistered
+     */
+    void unregister(String providerKey);
 
 }

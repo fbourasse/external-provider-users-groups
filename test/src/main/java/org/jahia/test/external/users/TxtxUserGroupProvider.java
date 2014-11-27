@@ -87,7 +87,7 @@ public class TxtxUserGroupProvider implements UserGroupProvider {
 
     public static final String TXTX_PROVIDER_KEY = "txtx";
 
-    private List users = Arrays.asList("tata", "tete", "titi");
+    private List<String> users = Arrays.asList("tata", "tete", "titi");
 
     private List<String> groups = Arrays.asList("toto", "tutu", "tyty");
 

@@ -87,17 +87,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Flow controller for the user/group providers.
+ */
 public class UserGroupProviderAdminFlow implements Serializable {
 
     private static final long AVAILABILITY_TIMEOUT = 60 * 1000L;
 
     private static final long serialVersionUID = 4171622809934546645L;
 
+    private static final int WAIT_SLEEP = 2000;
+
     @Autowired
     private transient ExternalUserGroupServiceImpl externalUserGroupServiceImpl;
 
     private transient JCRStoreService jcrStoreService;
 
+    /**
+     * Performs the creation of the provider.
+     * 
+     * @param parameters
+     *            flow parameter map
+     * @param flashScope
+     *            flow attribute map
+     * @throws Exception
+     *             in case of a creation error
+     */
     public void createProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
         String providerClass = parameters.get("providerClass");
@@ -105,6 +120,18 @@ public class UserGroupProviderAdminFlow implements Serializable {
         wait(providerKey, true);
     }
 
+    /**
+     * Performs deletion of the provider
+     * 
+     * @param providerKey
+     *            the key of the provider
+     * @param providerClass
+     *            provider class name
+     * @param flashScope
+     *            the flow attribute map
+     * @throws Exception
+     *             in case of an error during deletion
+     */
     public void deleteProvider(String providerKey, String providerClass, MutableAttributeMap flashScope) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
         configurations.get(providerClass).delete(providerKey, flashScope);
@@ -112,6 +139,16 @@ public class UserGroupProviderAdminFlow implements Serializable {
         wait(providerKey, false);
     }
 
+    /**
+     * Performs the edition of the provider configuration.
+     * 
+     * @param parameters
+     *            flow parameter map
+     * @param flashScope
+     *            flow attribute map
+     * @throws Exception
+     *             in case of an error during edition
+     */
     public void editProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
         String providerKey = parameters.get("providerKey");
@@ -121,6 +158,11 @@ public class UserGroupProviderAdminFlow implements Serializable {
         wait(providerKey, true);
     }
 
+    /**
+     * Returns the provider create configuration map.
+     * 
+     * @return the provider create configuration map
+     */
     public Map<String, UserGroupProviderConfiguration> getCreateConfigurations() {
         HashMap<String, UserGroupProviderConfiguration> map = new HashMap<String, UserGroupProviderConfiguration>();
         for (Map.Entry<String, UserGroupProviderConfiguration> entry : externalUserGroupServiceImpl.getProviderConfigurations().entrySet()) {
@@ -131,13 +173,18 @@ public class UserGroupProviderAdminFlow implements Serializable {
         return map;
     }
 
+    /**
+     * Returns a list of registered user/group providers.
+     * 
+     * @return a list of registered user/group providers
+     */
     public List<UserGroupProviderInfo> getUserGroupProviders() {
         ArrayList<UserGroupProviderInfo> infos = new ArrayList<UserGroupProviderInfo>();
         Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
         for (Map.Entry<String, UserGroupProviderRegistration> entry : externalUserGroupServiceImpl.getRegisteredProviders().entrySet()) {
             UserGroupProviderInfo providerInfo = new UserGroupProviderInfo();
             providerInfo.setKey(entry.getKey());
-            UsersDataSource dataSource = (UsersDataSource) entry.getValue().getUserProvider().getDataSource();
+            UserDataSource dataSource = (UserDataSource) entry.getValue().getUserProvider().getDataSource();
             UserGroupProvider userGroupProvider = dataSource.getUserGroupProvider();
             String userGroupProviderClass = userGroupProvider.getClass().getName();
             providerInfo.setProviderClass(userGroupProviderClass);
@@ -157,6 +204,14 @@ public class UserGroupProviderAdminFlow implements Serializable {
         return infos;
     }
 
+    /**
+     * Resumes the specified provider.
+     * 
+     * @param providerKey
+     *            the key of the provider to be resumed
+     * @throws JahiaInitializationException
+     *             in case of a provider initialization error
+     */
     public void resumeProvider(String providerKey) throws JahiaInitializationException {
         UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(providerKey);
         JCRStoreProvider userProvider = registration.getUserProvider();
@@ -174,6 +229,12 @@ public class UserGroupProviderAdminFlow implements Serializable {
         this.jcrStoreService = jcrStoreService;
     }
 
+    /**
+     * Resumes the provider.
+     * 
+     * @param providerKey
+     *            the key of the provider to be resumed
+     */
     public void suspendProvider(String providerKey) {
         UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(providerKey);
         JCRStoreProvider userProvider = registration.getUserProvider();
@@ -197,7 +258,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
                         .getProviders().containsKey(providerKey)))) {
             // wait for provider availability / unavilability if it's asynchronous
             try {
-                Thread.sleep(2000);
+                Thread.sleep(WAIT_SLEEP);
             } catch (InterruptedException e) {
                 // ignore
             }

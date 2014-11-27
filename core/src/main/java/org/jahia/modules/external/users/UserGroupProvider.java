@@ -77,6 +77,9 @@ import org.jahia.services.usermanager.JahiaUser;
 import java.util.List;
 import java.util.Properties;
 
+/**
+ * Describes a service for retrieving user and group information. 
+ */
 public interface UserGroupProvider {
 
     /**

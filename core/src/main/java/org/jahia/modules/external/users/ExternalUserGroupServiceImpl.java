@@ -81,9 +81,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jcr.RepositoryException;
+
 import java.util.*;
 
+/**
+ * Implementation of the external user/group service.
+ */
 public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
+
+    private static final List<String> EXTENDABLE_TYPES = Arrays.asList("nt:base");
+
+    private static final List<String> OVERRIDABLE_ITEMS = Arrays.asList("jnt:user.*", "jnt:usersFolder.*",
+            "mix:lastModified.*", "jmix:lastPublished.*");
 
     private static final Logger logger = LoggerFactory.getLogger(ExternalUserGroupServiceImpl.class);
 
@@ -94,10 +103,12 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
     private Map<String, UserGroupProviderRegistration> registeredProviders = new TreeMap<String, UserGroupProviderRegistration>();
     private Map<String, UserGroupProviderConfiguration> providerConfigurations = new HashMap<String, UserGroupProviderConfiguration>();
 
+    @Override
     public void register(String providerKey, final UserGroupProvider userGroupProvider) {
         register(providerKey, null, userGroupProvider);
     }
 
+    @Override
     public void register(String providerKey, final String siteKey, final UserGroupProvider userGroupProvider) {
         final String usersFolderName = "users";
         final String groupsFolderName = "groups";
@@ -154,22 +165,23 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
         Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
         if (providers.get(userProviderKey) == null && providers.get(groupProviderKey) == null) {
             try {
-                UsersDataSource usersDataSource = (UsersDataSource) SpringContextSingleton.getBeanInModulesContext("UsersDataSourcePrototype");
-                usersDataSource.setUserGroupProvider(userGroupProvider);
+                UserDataSource userDataSource = (UserDataSource) SpringContextSingleton.getBeanInModulesContext("UserDataSourcePrototype");
+                userDataSource.setUserGroupProvider(userGroupProvider);
 
                 ExternalContentStoreProvider userProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
                 userProvider.setKey(userProviderKey);
-                userProvider.setMountPoint((siteKey == null ? "/" : "/sites/" + siteKey + "/") + usersFolderName + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
-                userProvider.setDataSource(usersDataSource);
-                userProvider.setExtendableTypes(Arrays.asList("nt:base"));
-                userProvider.setOverridableItems(Arrays.asList("jnt:user.*", "jnt:usersFolder.*", "mix:lastModified.*", "jmix:lastPublished.*"));
+                String sitePath = "/sites/" + siteKey + "/";
+                userProvider.setMountPoint((siteKey == null ? "/" : sitePath) + usersFolderName + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
+                userProvider.setDataSource(userDataSource);
+                userProvider.setExtendableTypes(EXTENDABLE_TYPES);
+                userProvider.setOverridableItems(OVERRIDABLE_ITEMS);
                 String readOnlyProps = (String) SettingsBean.getInstance().getPropertiesFile().get("external.users.properties.readonly." + providerKey);
                 if (StringUtils.isBlank(readOnlyProps)) {
                     readOnlyProps = readOnlyUserProperties;
                 }
                 if (StringUtils.isNotBlank(readOnlyProps)) {
                     List<String> nonOverridableItems = new ArrayList<String>();
-                    for (String p : StringUtils.split(readOnlyProps, ",")) {
+                    for (String p : StringUtils.split(readOnlyProps, ',')) {
                         if (StringUtils.isNotBlank(p)) {
                             nonOverridableItems.add("jnt:user." + p.trim());
                         }
@@ -179,24 +191,22 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
                     }
                 }
 
-                usersDataSource.setContentStoreProvider(userProvider);
+                userDataSource.setContentStoreProvider(userProvider);
 
-                UserGroupProviderRegistration registration = new UserGroupProviderRegistration();
-                registration.setUserProvider(userProvider);
-                registration.setSiteKey(siteKey);
+                UserGroupProviderRegistration registration = new UserGroupProviderRegistration(siteKey, userProvider);
                 registeredProviders.put(providerKey, registration);
 
                 userProvider.start();
 
 
                 if (userGroupProvider.supportsGroups()) {
-                    GroupsDataSource groupDataSource = (GroupsDataSource) SpringContextSingleton.getBeanInModulesContext("GroupsDataSourcePrototype");
-                    groupDataSource.setUsersDataSource(usersDataSource);
+                    GroupDataSource groupDataSource = (GroupDataSource) SpringContextSingleton.getBeanInModulesContext("GroupDataSourcePrototype");
+                    groupDataSource.setUserDataSource(userDataSource);
                     groupDataSource.setUserGroupProvider(userGroupProvider);
 
                     ExternalContentStoreProvider groupProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
                     groupProvider.setKey(groupProviderKey);
-                    groupProvider.setMountPoint((siteKey == null ? "/" : "/sites/" + siteKey + "/")+ groupsFolderName + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
+                    groupProvider.setMountPoint((siteKey == null ? "/" : sitePath)+ groupsFolderName + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
                     groupProvider.setDataSource(groupDataSource);
 
                     groupDataSource.setContentStoreProvider(groupProvider);
@@ -211,6 +221,7 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
         }
     }
 
+    @Override
     public void unregister(String providerKey) {
         Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
         JCRStoreProvider provider = providers.get(providerKey + ".users");
@@ -224,6 +235,7 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
         registeredProviders.remove(providerKey);
     }
 
+    @Override
     public void setConfiguration(String providerClass, UserGroupProviderConfiguration userGroupProviderConfig) {
         providerConfigurations.put(providerClass, userGroupProviderConfig);
     }

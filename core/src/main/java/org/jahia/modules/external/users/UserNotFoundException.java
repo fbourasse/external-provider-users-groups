@@ -71,21 +71,48 @@
  */
 package org.jahia.modules.external.users;
 
+/**
+ * An exception that is thrown when a lookup is done for a user, which cannot be found.
+ */
 public class UserNotFoundException extends Exception {
+
     private static final long serialVersionUID = 397409424965323443L;
 
+    /**
+     * Initializes an instance of this class.
+     */
     public UserNotFoundException() {
         super();
     }
 
+    /**
+     * Initializes an instance of this class.
+     * 
+     * @param message
+     *            the detailed error message
+     */
     public UserNotFoundException(String message) {
         super(message);
     }
 
+    /**
+     * Initializes an instance of this class.
+     * 
+     * @param message
+     *            the detailed error message
+     * @param cause
+     *            the original cause of the error
+     */
     public UserNotFoundException(String message, Throwable cause) {
         super(message, cause);
     }
 
+    /**
+     * Initializes an instance of this class.
+     * 
+     * @param cause
+     *            the original cause of the error
+     */
     public UserNotFoundException(Throwable cause) {
         super(cause);
     }

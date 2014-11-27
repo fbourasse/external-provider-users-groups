@@ -78,7 +78,10 @@ import javax.jcr.RepositoryException;
 import javax.jcr.query.qom.*;
 import java.util.Properties;
 
-public class SearchCriteriaHelper {
+/**
+ * Utility class for search criteria operations.
+ */
+final class SearchCriteriaHelper {
 
     /**
      * Get String/String principal search criteria from search query constraint

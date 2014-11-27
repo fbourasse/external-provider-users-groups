@@ -87,6 +87,27 @@ public class UserGroupProviderRegistration implements Serializable {
     private String siteKey;
     
     private ExternalContentStoreProvider userProvider;
+    
+    /**
+     * Initializes an instance of this class.
+     */
+    public UserGroupProviderRegistration() {
+        super();
+    }
+
+    /**
+     * Initializes an instance of this class.
+     * 
+     * @param siteKey
+     *            the target site key
+     * @param userProvider
+     *            the user provider to be registered
+     */
+    public UserGroupProviderRegistration(String siteKey, ExternalContentStoreProvider userProvider) {
+        this();
+        this.siteKey = siteKey;
+        this.userProvider = userProvider;
+    }
 
     public ExternalContentStoreProvider getGroupProvider() {
         return groupProvider;

@@ -86,16 +86,41 @@ import org.slf4j.LoggerFactory;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
+
 import java.util.*;
 
 import static javax.jcr.security.Privilege.*;
 import static org.jahia.api.Constants.EDIT_WORKSPACE;
 import static org.jahia.api.Constants.LIVE_WORKSPACE;
 
-public class UsersDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable {
+/**
+ * Data source implementation for retrieving users. 
+ */
+public class UserDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable {
 
-    private static Logger logger = LoggerFactory.getLogger(UsersDataSource.class);
+    private static final String[] READ_PROVILEGES = new String[] {JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE};
+    
+    private static final String[] USER_FOLDER_PRIVILEGES = new String[] {
+        JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE,
+        JCR_WRITE + "_" + EDIT_WORKSPACE, JCR_WRITE + "_" + LIVE_WORKSPACE,
+        JCR_ADD_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_ADD_CHILD_NODES + "_" + LIVE_WORKSPACE,
+        JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_REMOVE_CHILD_NODES + "_" + LIVE_WORKSPACE,
+        "actions"
+    };
+    
+    private static final String[] USER_SUBFOLDER_PROVILEGES = new String[] {
+            JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE,
+            JCR_WRITE + "_" + EDIT_WORKSPACE, JCR_WRITE + "_" + LIVE_WORKSPACE,
+            JCR_REMOVE_NODE + "_" + EDIT_WORKSPACE, JCR_REMOVE_NODE + "_" + LIVE_WORKSPACE,
+            JCR_ADD_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_ADD_CHILD_NODES + "_" + LIVE_WORKSPACE,
+            JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_REMOVE_CHILD_NODES + "_" + LIVE_WORKSPACE,
+            "actions"
+    };
+    
+    private static Logger logger = LoggerFactory.getLogger(UserDataSource.class);
+    
     public static final HashSet<String> SUPPORTED_NODE_TYPES = new HashSet<String>(Arrays.asList("jnt:externalUser", "jnt:usersFolder"));
+    
     private JahiaUserManagerService jahiaUserManagerService;
 
     private UserGroupProvider userGroupProvider;
@@ -236,32 +261,20 @@ public class UsersDataSource implements ExternalDataSource, ExternalDataSource.S
         this.contentStoreProvider = contentStoreProvider;
     }
 
+    @Override
     public String[] getPrivilegesNames(String username, String path) {
         if (path.contains("/")) {
             String[] pathSegments = StringUtils.split(path, '/');
             JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
             if (pathSegments.length == userSplittingRule.getNumberOfSegments() + 1 // number of split folders + user name
                     && username.equals(pathSegments[userSplittingRule.getNumberOfSegments()])) {
-                return new String[] {
-                        JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE,
-                        JCR_WRITE + "_" + EDIT_WORKSPACE, JCR_WRITE + "_" + LIVE_WORKSPACE,
-                        JCR_ADD_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_ADD_CHILD_NODES + "_" + LIVE_WORKSPACE,
-                        JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_REMOVE_CHILD_NODES + "_" + LIVE_WORKSPACE,
-                        "actions"
-                };
+                return USER_FOLDER_PRIVILEGES;
             }
             if (pathSegments.length > userSplittingRule.getNumberOfSegments() + 1 // user subfolder
                     && username.equals(pathSegments[userSplittingRule.getNumberOfSegments()])) {
-                return new String[] {
-                        JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE,
-                        JCR_WRITE + "_" + EDIT_WORKSPACE, JCR_WRITE + "_" + LIVE_WORKSPACE,
-                        JCR_REMOVE_NODE + "_" + EDIT_WORKSPACE, JCR_REMOVE_NODE + "_" + LIVE_WORKSPACE,
-                        JCR_ADD_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_ADD_CHILD_NODES + "_" + LIVE_WORKSPACE,
-                        JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_REMOVE_CHILD_NODES + "_" + LIVE_WORKSPACE,
-                        "actions"
-                };
+                return USER_SUBFOLDER_PROVILEGES;
             }
         }
-        return new String[] {JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE};
+        return READ_PROVILEGES;
     }
 }

@@ -80,10 +80,19 @@ import org.slf4j.LoggerFactory;
 
 import javax.jcr.RepositoryException;
 
+/**
+ * Extension of the user node in JCR to support external providers. 
+ */
 public class JCRExternalUserNode extends JCRUserNode {
 
     private static final Logger logger = LoggerFactory.getLogger(JCRExternalUserNode.class);
 
+    /**
+     * Initializes an instance of this class.
+     * 
+     * @param node
+     *            the underlying JCR node
+     */
     public JCRExternalUserNode(JCRNodeWrapper node) {
         super(node);
     }
@@ -111,7 +120,7 @@ public class JCRExternalUserNode extends JCRUserNode {
 
     @Override
     public boolean verifyPassword(String userPassword) {
-        UsersDataSource dataSource = (UsersDataSource) ((ExternalContentStoreProvider) getProvider()).getDataSource();
+        UserDataSource dataSource = (UserDataSource) ((ExternalContentStoreProvider) getProvider()).getDataSource();
         return dataSource.getUserGroupProvider().verifyPassword(getName(), userPassword);
     }
 }

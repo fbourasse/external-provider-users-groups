@@ -101,7 +101,7 @@ public interface UserGroupProviderConfiguration extends Serializable {
      * @param parameters the request parameters
      * @param flashScope the scope to set variables necessary for a reload of creation form due to an exception
      * @return the provider key
-     * @throws Exception
+     * @throws Exception in case of an error during configuration create
      */
     String create(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception;
 
@@ -117,9 +117,10 @@ public interface UserGroupProviderConfiguration extends Serializable {
 
     /**
      * Edit configuration
+     * @param providerKey the key of the provider
      * @param parameters the request parameters
      * @param flashScope the scope to set variables necessary for a reload of edit form due to an exception
-     * @throws Exception
+     * @throws Exception in case of an error during configuration edit
      */
     void edit(String providerKey, ParameterMap parameters, MutableAttributeMap flashScope) throws Exception;
 
@@ -132,7 +133,7 @@ public interface UserGroupProviderConfiguration extends Serializable {
      * Delete configuration
      * @param providerKey the provider key
      * @param flashScope the scope to set variables necessary for a reload of deletion form due to an exception
-     * @throws Exception
+     * @throws Exception in case of an error during configuration delete
      */
     void delete(String providerKey, MutableAttributeMap flashScope) throws Exception;
 
