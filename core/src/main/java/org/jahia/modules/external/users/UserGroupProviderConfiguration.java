@@ -71,10 +71,8 @@
  */
 package org.jahia.modules.external.users;
 
-import org.springframework.webflow.core.collection.MutableAttributeMap;
-import org.springframework.webflow.core.collection.ParameterMap;
-
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Interface to implement a custom behaviour for a user and group provider configuration
@@ -103,7 +101,7 @@ public interface UserGroupProviderConfiguration extends Serializable {
      * @return the provider key
      * @throws Exception in case of an error during configuration create
      */
-    String create(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception;
+    String create(Map<String, Object> parameters, Map<String, Object> flashScope) throws Exception;
 
     /**
      * @return true if configuration edit is supported
@@ -122,7 +120,7 @@ public interface UserGroupProviderConfiguration extends Serializable {
      * @param flashScope the scope to set variables necessary for a reload of edit form due to an exception
      * @throws Exception in case of an error during configuration edit
      */
-    void edit(String providerKey, ParameterMap parameters, MutableAttributeMap flashScope) throws Exception;
+    void edit(String providerKey, Map<String, Object> parameters, Map<String, Object> flashScope) throws Exception;
 
     /**
      * @return true if configuration deletion is supported
@@ -135,6 +133,6 @@ public interface UserGroupProviderConfiguration extends Serializable {
      * @param flashScope the scope to set variables necessary for a reload of deletion form due to an exception
      * @throws Exception in case of an error during configuration delete
      */
-    void delete(String providerKey, MutableAttributeMap flashScope) throws Exception;
+    void delete(String providerKey, Map<String, Object> flashScope) throws Exception;
 
 }

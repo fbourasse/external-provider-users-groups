@@ -119,7 +119,8 @@ public class UserGroupProviderAdminFlow implements Serializable {
     public void createProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
         String providerClass = parameters.get("providerClass");
-        String providerKey = configurations.get(providerClass).create(parameters, flashScope) + ".users";
+        @SuppressWarnings("unchecked")
+        String providerKey = configurations.get(providerClass).create(parameters.asMap(), flashScope.asMap()) + ".users";
         wait(providerKey, true);
     }
 
@@ -135,9 +136,10 @@ public class UserGroupProviderAdminFlow implements Serializable {
      * @throws Exception
      *             in case of an error during deletion
      */
+    @SuppressWarnings("unchecked")
     public void deleteProvider(String providerKey, String providerClass, MutableAttributeMap flashScope) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
-        configurations.get(providerClass).delete(providerKey, flashScope);
+        configurations.get(providerClass).delete(providerKey, flashScope.asMap());
         providerKey += ".users";
         wait(providerKey, false);
     }
@@ -152,11 +154,12 @@ public class UserGroupProviderAdminFlow implements Serializable {
      * @throws Exception
      *             in case of an error during edition
      */
+    @SuppressWarnings("unchecked")
     public void editProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
         String providerKey = parameters.get("providerKey");
         String providerClass = parameters.get("providerClass");
-        configurations.get(providerClass).edit(providerKey, parameters, flashScope);
+        configurations.get(providerClass).edit(providerKey, parameters.asMap(), flashScope.asMap());
         providerKey += ".users";
         wait(providerKey, true);
     }
