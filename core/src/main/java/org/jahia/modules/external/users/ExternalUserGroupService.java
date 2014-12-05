@@ -71,6 +71,8 @@
  */
 package org.jahia.modules.external.users;
 
+import org.jahia.services.content.decorator.JCRMountPointNode;
+
 /**
  * Service to register and unregister a UserGroupProvider
  */
@@ -116,4 +118,11 @@ public interface ExternalUserGroupService {
      */
     void unregister(String providerKey);
 
+
+    /**
+     * Allow to change the status of a given provider
+     * @param providerKey
+     * @param status
+     */
+    public void setMountStatus(String providerKey, JCRMountPointNode.MountStatus status);
 }

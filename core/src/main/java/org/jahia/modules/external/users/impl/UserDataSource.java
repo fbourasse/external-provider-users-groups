@@ -98,7 +98,7 @@ import static org.jahia.api.Constants.LIVE_WORKSPACE;
 /**
  * Data source implementation for retrieving users. 
  */
-public class UserDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable {
+public class UserDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable, ExternalDataSource.CanCheckAvailability {
 
     private static final String[] READ_PROVILEGES = new String[] {JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE};
     
@@ -278,5 +278,10 @@ public class UserDataSource implements ExternalDataSource, ExternalDataSource.Se
             }
         }
         return READ_PROVILEGES;
+    }
+
+    @Override
+    public boolean isAvailable() throws RepositoryException {
+        return userGroupProvider.isAvailable();
     }
 }

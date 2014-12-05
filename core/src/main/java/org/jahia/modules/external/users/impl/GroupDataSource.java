@@ -79,7 +79,6 @@ import org.jahia.modules.external.ExternalQuery;
 import org.jahia.modules.external.users.GroupNotFoundException;
 import org.jahia.modules.external.users.Member;
 import org.jahia.modules.external.users.UserGroupProvider;
-import org.jahia.modules.external.users.Member.MemberType;
 import org.jahia.services.usermanager.JahiaGroup;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.services.usermanager.JahiaUserSplittingRule;
@@ -95,7 +94,7 @@ import java.util.*;
 /**
  * Data source implementation for retrieving groups.
  */
-public class GroupDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.Referenceable {
+public class GroupDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.Referenceable, ExternalDataSource.CanCheckAvailability {
 
     private static final Logger logger = LoggerFactory.getLogger(GroupDataSource.class);
 
@@ -342,6 +341,11 @@ public class GroupDataSource implements ExternalDataSource, ExternalDataSource.S
             }
         }
         return result;
+    }
+
+    @Override
+    public boolean isAvailable() throws RepositoryException {
+        return this.userGroupProvider.isAvailable();
     }
 
     public void setContentStoreProvider(ExternalContentStoreProvider contentStoreProvider) {

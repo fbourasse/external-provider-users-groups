@@ -74,6 +74,7 @@ package org.jahia.modules.external.users;
 import org.jahia.services.usermanager.JahiaGroup;
 import org.jahia.services.usermanager.JahiaUser;
 
+import javax.jcr.RepositoryException;
 import java.util.List;
 import java.util.Properties;
 
@@ -158,4 +159,10 @@ public interface UserGroupProvider {
      */
     boolean supportsGroups();
 
+    /**
+     * @return true if the provider is available will be call when the "/" node is ask for the provider
+     * can throw a RepositoryException or return false in case of provider not available
+     * @throws RepositoryException
+     */
+    boolean isAvailable() throws RepositoryException;
 }

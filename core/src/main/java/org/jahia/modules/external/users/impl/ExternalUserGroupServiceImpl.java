@@ -79,6 +79,7 @@ import org.jahia.modules.external.users.UserGroupProvider;
 import org.jahia.modules.external.users.UserGroupProviderConfiguration;
 import org.jahia.services.SpringContextSingleton;
 import org.jahia.services.content.*;
+import org.jahia.services.content.decorator.JCRMountPointNode;
 import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -243,6 +244,19 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
         providerConfigurations.put(providerClass, userGroupProviderConfig);
     }
 
+    @Override
+    public void setMountStatus(String providerKey, JCRMountPointNode.MountStatus status) {
+        Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
+        JCRStoreProvider provider = providers.get(providerKey + ".users");
+        if (provider != null) {
+            provider.setMountStatus(status);
+        }
+        provider = providers.get(providerKey + ".groups");
+        if (provider != null) {
+            provider.setMountStatus(status);
+        }
+    }
+
     public Map<String, UserGroupProviderConfiguration> getProviderConfigurations() {
         return providerConfigurations;
     }
@@ -257,5 +271,9 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
     public void setReadOnlyUserProperties(String readOnlyUserProperties) {
         this.readOnlyUserProperties = readOnlyUserProperties;
+    }
+
+    public JCRStoreService getJcrStoreService() {
+        return jcrStoreService;
     }
 }

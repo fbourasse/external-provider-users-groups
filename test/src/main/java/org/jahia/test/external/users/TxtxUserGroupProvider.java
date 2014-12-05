@@ -80,6 +80,7 @@ import org.jahia.services.usermanager.JahiaGroupImpl;
 import org.jahia.services.usermanager.JahiaUser;
 import org.jahia.services.usermanager.JahiaUserImpl;
 
+import javax.jcr.RepositoryException;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -185,6 +186,11 @@ public class TxtxUserGroupProvider implements UserGroupProvider {
 
     @Override
     public boolean supportsGroups() {
+        return true;
+    }
+
+    @Override
+    public boolean isAvailable() throws RepositoryException {
         return true;
     }
 
