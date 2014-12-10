@@ -81,7 +81,6 @@ import org.jahia.modules.external.users.Member;
 import org.jahia.modules.external.users.UserGroupProvider;
 import org.jahia.services.usermanager.JahiaGroup;
 import org.jahia.services.usermanager.JahiaUserManagerService;
-import org.jahia.services.usermanager.JahiaUserSplittingRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,7 +97,7 @@ public class GroupDataSource implements ExternalDataSource, ExternalDataSource.S
 
     private static final Logger logger = LoggerFactory.getLogger(GroupDataSource.class);
 
-    private static final String MEMBER_PATHS_SESSION_VAR = "memberPathsByGroupName";
+    private static final String MEMBERS_SESSION_VAR = "membersByGroupName";
 
     private static final String MEMBER_REF_ATTR = "j:member";
     
@@ -129,29 +128,21 @@ public class GroupDataSource implements ExternalDataSource, ExternalDataSource.S
         if (!MEMBERS_ROOT_NAME.equals(pathSegments[1])) {
             throw new PathNotFoundException(path);
         }
-        String memberPathBase = StringUtils.substringAfter(path, "/" + MEMBERS_ROOT_NAME);
-        JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
-        String userPath = StringUtils.substringAfter(memberPathBase, userDataSource.getContentStoreProvider().getMountPoint());
-        String groupPath = StringUtils.substringAfter(memberPathBase, contentStoreProvider.getMountPoint());
-        if (StringUtils.isNotBlank(userPath) && StringUtils.split(userPath, '/').length >= userSplittingRule.getNumberOfSegments() + 1) { // split folders + user name
-            // path is for member user node or subnode
-            return Collections.emptyList();
+        if (pathSegments.length == 2) {
+            List<String> types = new ArrayList<>();
+            for (Member.MemberType t : Member.MemberType.values()) {
+                types.add(t.name());
+            }
+            return types;
         }
-        if (StringUtils.isNotBlank(groupPath)) {
-            // path is for member group node or subnode
-            return Collections.emptyList();
-        }
-        HashSet<String> children = new HashSet<String>();
-        for (String memberPath : getMembers(pathSegments[0])) {
-            if (memberPath.startsWith(memberPathBase)) {
-                memberPath = StringUtils.removeStart(memberPath, memberPathBase + "/");
-                memberPath = StringUtils.substringBefore(memberPath, "/");
-                children.add(memberPath);
+        if (pathSegments.length == 3) {
+            try {
+                return getMembers(pathSegments[0], Member.MemberType.valueOf(pathSegments[2]));
+            } catch (IllegalArgumentException e) {
+                throw new PathNotFoundException(path);
             }
         }
-        List<String> l = new ArrayList<String>();
-        l.addAll(children);
-        return l;
+        return Collections.emptyList();
     }
 
     public ExternalContentStoreProvider getContentStoreProvider() {
@@ -202,24 +193,22 @@ public class GroupDataSource implements ExternalDataSource, ExternalDataSource.S
             throw new PathNotFoundException(path);
         }
         String memberPath = StringUtils.substringAfter(path, "/" + MEMBERS_ROOT_NAME);
-        JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
-        String userPath = StringUtils.substringAfter(memberPath, userDataSource.getContentStoreProvider().getMountPoint());
-        String groupPath = StringUtils.substringAfter(memberPath, contentStoreProvider.getMountPoint());
-        if (StringUtils.isNotBlank(userPath)) {
-            int nbrOfUserPathSegments = StringUtils.split(userPath, '/').length;
-            if (nbrOfUserPathSegments == userSplittingRule.getNumberOfSegments() + 1) { // member user path
-                return getMemberData(path, userPath, userDataSource.getContentStoreProvider());
-            } else if (nbrOfUserPathSegments < userSplittingRule.getNumberOfSegments() + 1) { // split folder
-                return new ExternalData(path, path, "jnt:members", new HashMap<String, String[]>());
-            } else { // path too long
+        String userName = StringUtils.substringAfter(memberPath, "/" + Member.MemberType.USER.name() + "/");
+        String groupName = StringUtils.substringAfter(memberPath, "/" + Member.MemberType.GROUP.name() + "/");
+        if (StringUtils.isNotBlank(userName)) {
+            if (StringUtils.contains(userName, "/")) {
                 throw new PathNotFoundException(path);
+            } else {
+                return getMemberData(path,
+                        jahiaUserManagerService.getUserSplittingRule().getRelativePathForUsername(userName),
+                        userDataSource.getContentStoreProvider());
             }
         }
-        if (StringUtils.isNotBlank(groupPath)) {
-            if (StringUtils.split(groupPath, '/').length == 1) { // member group path
-                return getMemberData(path, groupPath, contentStoreProvider);
-            } else { // path too long
+        if (StringUtils.isNotBlank(groupName)) {
+            if (StringUtils.contains(groupName, "/")) {
                 throw new PathNotFoundException(path);
+            } else {
+                return getMemberData(path, "/" + groupName, contentStoreProvider);
             }
         }
         return new ExternalData(path, path, "jnt:members", new HashMap<String, String[]>());
@@ -236,29 +225,27 @@ public class GroupDataSource implements ExternalDataSource, ExternalDataSource.S
     }
 
     @SuppressWarnings("unchecked")
-    private List<String> getMembers(String groupName) throws RepositoryException {
+    private List<String> getMembers(String groupName, Member.MemberType type) throws RepositoryException {
         Map<String, Object> sessionVariables = ExternalContentStoreProvider.getCurrentSession().getSessionVariables();
-        Map<String, List<String>> memberPathsByGroupName;
-        if (sessionVariables.containsKey(MEMBER_PATHS_SESSION_VAR)) {
-            memberPathsByGroupName = (Map<String, List<String>>) sessionVariables.get(MEMBER_PATHS_SESSION_VAR);
+        Map<String, Map<Member.MemberType, List<String>>> members;
+        if (sessionVariables.containsKey(MEMBERS_SESSION_VAR)) {
+            members = (Map<String, Map<Member.MemberType, List<String>>>) sessionVariables.get(MEMBERS_SESSION_VAR);
         } else {
-            memberPathsByGroupName = new HashMap<String, List<String>>();
-            sessionVariables.put(MEMBER_PATHS_SESSION_VAR, memberPathsByGroupName);
+            members = new HashMap<>();
+            sessionVariables.put(MEMBERS_SESSION_VAR, members);
         }
-        if (memberPathsByGroupName.containsKey(groupName)) {
-            return memberPathsByGroupName.get(groupName);
+        if (members.containsKey(groupName)) {
+            return members.get(groupName).get(type);
         } else {
-            ArrayList<String> paths = new ArrayList<String>();
-            JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
-            for (Member member : userGroupProvider.getGroupMembers(groupName)) {
-                if (member.getType() == Member.MemberType.GROUP) {
-                    paths.add(contentStoreProvider.getMountPoint() + "/" + member.getName());
-                } else {
-                    paths.add(userDataSource.getContentStoreProvider().getMountPoint() + userSplittingRule.getRelativePathForUsername(member.getName()));
-                }
+            Map<Member.MemberType, List<String>> membersByType = new HashMap<>();
+            for (Member.MemberType t : Member.MemberType.values()) {
+                membersByType.put(t, new ArrayList<String>());
             }
-            memberPathsByGroupName.put(groupName, paths);
-            return paths;
+            for (Member member : userGroupProvider.getGroupMembers(groupName)) {
+                membersByType.get(member.getType()).add(member.getName());
+            }
+            members.put(groupName, membersByType);
+            return membersByType.get(type);
         }
     }
 
