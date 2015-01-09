@@ -254,19 +254,20 @@ public class GroupDataSource implements ExternalDataSource, ExternalDataSource.S
         if (MEMBER_REF_ATTR.equals(propertyName)) {
             String principalId = identifier;
             List<String> groups = null;
-            ExternalContentStoreProvider provider = null;
 
+            Member member = null;
             if (principalId.startsWith("/")) {
                 // already an externalId -> identifier of a group
-                groups = userGroupProvider.getMembership(new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.GROUP));
-                provider = contentStoreProvider;
+                member = new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.GROUP);
+                groups = userGroupProvider.getMembership(member);
             } else {
                 try {
-                    provider = userDataSource.getContentStoreProvider();
+                    ExternalContentStoreProvider provider = userDataSource.getContentStoreProvider();
                     if (identifier.startsWith(provider.getId())) {
                         principalId = provider.getExternalProviderInitializerService().getExternalIdentifier(identifier);
                         if (principalId != null && principalId.startsWith("/")) {
-                            groups = userGroupProvider.getMembership(new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.USER));
+                            member = new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.USER);
+                            groups = userGroupProvider.getMembership(member);
                         }
                     }
                 } catch (RepositoryException e) {
@@ -275,9 +276,9 @@ public class GroupDataSource implements ExternalDataSource, ExternalDataSource.S
             }
 
             List<String> properties = new ArrayList<String>();
-            if (groups != null && !groups.isEmpty()) {
+            if (member != null && groups != null && !groups.isEmpty()) {
                 for (String group : groups) {
-                    properties.add("/" + group + "/" + MEMBERS_ROOT_NAME + provider.getMountPoint() + principalId + "/" + MEMBER_REF_ATTR);
+                    properties.add("/" + group + "/" + MEMBERS_ROOT_NAME + "/" + member.getType().name() + "/" + member.getName() + "/" + MEMBER_REF_ATTR);
                 }
             }
             return properties;
