@@ -89,6 +89,12 @@
     <developerConnection>scm:git:git@github.com:Jahia/external-provider-users-groups.git</developerConnection>
     <url>https://github.com/Jahia/external-provider-users-groups</url>
   </scm>
+    <properties>
+        <jahia-module-type>system</jahia-module-type>
+        <jahia-depends>default,external-provider,serverSettings</jahia-depends>
+        <jahia-deploy-on-site>system</jahia-deploy-on-site>
+        <export-package>org.jahia.modules.external.users</export-package>
+    </properties>
   <dependencies>
     <dependency>
       <groupId>org.jahia.modules</groupId>
@@ -111,21 +117,4 @@
       <url>https://devtools.jahia.com/nexus/content/groups/public</url>
     </repository>
   </repositories>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <Jahia-Module-Type>system</Jahia-Module-Type>
-            <Jahia-Depends>default,external-provider,serverSettings</Jahia-Depends>
-            <Jahia-Deploy-On-Site>system</Jahia-Deploy-On-Site>
-            <Export-Package>org.jahia.modules.external.users</Export-Package>
-          </instructions>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>
