@@ -19,12 +19,12 @@
     </view-state>
 
     <action-state id="suspendProvider">
-        <evaluate expression="userGroupProviderHandler.suspendProvider(requestParameters.providerKey)"/>
+        <evaluate expression="userGroupProviderHandler.suspendProvider(requestParameters.providerKey, messageContext)"/>
         <transition to="view"/>
     </action-state>
 
     <action-state id="resumeProvider">
-        <evaluate expression="userGroupProviderHandler.resumeProvider(requestParameters.providerKey)"/>
+        <evaluate expression="userGroupProviderHandler.resumeProvider(requestParameters.providerKey, messageContext)"/>
         <transition to="view"/>
     </action-state>
 
@@ -39,11 +39,11 @@
     </view-state>
 
     <action-state id="createProvider">
-        <evaluate expression="userGroupProviderHandler.createProvider(requestParameters, flashScope)"/>
+        <evaluate expression="userGroupProviderHandler.createProvider(requestParameters, flashScope, messageContext)"/>
         <transition on-exception="java.lang.Exception" to="createProviderForm">
           <set name="flashScope.error" value="rootCauseException"/>
         </transition>
-        <transition to="theEnd"/>
+        <transition to="view"/>
     </action-state>
 
     <view-state id="editProviderForm">
@@ -57,11 +57,11 @@
     </view-state>
 
     <action-state id="editProvider">
-        <evaluate expression="userGroupProviderHandler.editProvider(requestParameters, flashScope)"/>
+        <evaluate expression="userGroupProviderHandler.editProvider(requestParameters, flashScope, messageContext)"/>
         <transition on-exception="java.lang.Exception" to="editProviderForm">
           <set name="flashScope.error" value="rootCauseException"/>
         </transition>
-        <transition to="theEnd"/>
+        <transition to="view"/>
     </action-state>
 
     <view-state id="deleteProviderForm">
@@ -74,11 +74,11 @@
     </view-state>
 
     <action-state id="deleteProvider">
-        <evaluate expression="userGroupProviderHandler.deleteProvider(requestParameters.providerKey, requestParameters.providerClass, flashScope)"/>
+        <evaluate expression="userGroupProviderHandler.deleteProvider(requestParameters.providerKey, requestParameters.providerClass, flashScope, messageContext)"/>
         <transition on-exception="java.lang.Exception" to="deleteProviderForm">
           <set name="flashScope.error" value="rootCauseException"/>
         </transition>
-        <transition to="theEnd"/>
+        <transition to="view"/>
     </action-state>
 
     <end-state id="theEnd"/>

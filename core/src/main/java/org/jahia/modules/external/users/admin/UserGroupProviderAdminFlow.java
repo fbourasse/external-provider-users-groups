@@ -79,8 +79,11 @@ import org.jahia.modules.external.users.impl.UserGroupProviderRegistration;
 import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.content.JCRStoreProvider;
 import org.jahia.services.content.JCRStoreService;
+import org.jahia.settings.SettingsBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.binding.message.MessageBuilder;
+import org.springframework.binding.message.MessageContext;
 import org.springframework.webflow.core.collection.MutableAttributeMap;
 import org.springframework.webflow.core.collection.ParameterMap;
 
@@ -116,12 +119,13 @@ public class UserGroupProviderAdminFlow implements Serializable {
      * @throws Exception
      *             in case of a creation error
      */
-    public void createProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
+    public void createProvider(ParameterMap parameters, MutableAttributeMap flashScope, MessageContext messages) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
         String providerClass = parameters.get("providerClass");
         @SuppressWarnings("unchecked")
         String providerKey = configurations.get(providerClass).create(parameters.asMap(), flashScope.asMap()) + ".users";
         wait(providerKey, true);
+        addNoteForCluster(messages);
     }
 
     /**
@@ -137,11 +141,12 @@ public class UserGroupProviderAdminFlow implements Serializable {
      *             in case of an error during deletion
      */
     @SuppressWarnings("unchecked")
-    public void deleteProvider(String providerKey, String providerClass, MutableAttributeMap flashScope) throws Exception {
+    public void deleteProvider(String providerKey, String providerClass, MutableAttributeMap flashScope, MessageContext messages) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
         configurations.get(providerClass).delete(providerKey, flashScope.asMap());
         providerKey += ".users";
         wait(providerKey, false);
+        addNoteForCluster(messages);
     }
 
     /**
@@ -155,13 +160,14 @@ public class UserGroupProviderAdminFlow implements Serializable {
      *             in case of an error during edition
      */
     @SuppressWarnings("unchecked")
-    public void editProvider(ParameterMap parameters, MutableAttributeMap flashScope) throws Exception {
+    public void editProvider(ParameterMap parameters, MutableAttributeMap flashScope, MessageContext messages) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
         String providerKey = parameters.get("providerKey");
         String providerClass = parameters.get("providerClass");
         configurations.get(providerClass).edit(providerKey, parameters.asMap(), flashScope.asMap());
         providerKey += ".users";
         wait(providerKey, true);
+        addNoteForCluster(messages);
     }
 
     /**
@@ -218,7 +224,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
      * @throws JahiaInitializationException
      *             in case of a provider initialization error
      */
-    public void resumeProvider(String providerKey) throws JahiaInitializationException {
+    public void resumeProvider(String providerKey, MessageContext messages) throws JahiaInitializationException {
         UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(providerKey);
         JCRStoreProvider userProvider = registration.getUserProvider();
         if (userProvider != null) {
@@ -228,6 +234,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
         if (groupProvider != null) {
             groupProvider.start();
         }
+        addNoteForCluster(messages);
     }
 
     @Autowired
@@ -241,7 +248,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
      * @param providerKey
      *            the key of the provider to be resumed
      */
-    public void suspendProvider(String providerKey) {
+    public void suspendProvider(String providerKey, MessageContext messages) {
         UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(providerKey);
         JCRStoreProvider userProvider = registration.getUserProvider();
         if (userProvider != null) {
@@ -251,6 +258,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
         if (groupProvider != null) {
             groupProvider.stop();
         }
+        addNoteForCluster(messages);
     }
 
     private void wait(String providerKey, boolean shouldBeAvailable) {
@@ -269,5 +277,13 @@ public class UserGroupProviderAdminFlow implements Serializable {
                 // ignore
             }
         }
+    }
+    
+    private void addNoteForCluster(MessageContext messages) {
+        if (!SettingsBean.getInstance().isClusterActivated()) {
+            return;
+        }
+        
+        messages.addMessage(new MessageBuilder().info().code("label.userGroupProvider.clusterNote").build());
     }
 }
