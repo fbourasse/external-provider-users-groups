@@ -71,8 +71,15 @@
  */
 package org.jahia.modules.external.users.admin;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.jahia.exceptions.JahiaInitializationException;
-import org.jahia.modules.external.users.*;
+import org.jahia.modules.external.users.UserGroupProvider;
+import org.jahia.modules.external.users.UserGroupProviderConfiguration;
 import org.jahia.modules.external.users.impl.ExternalUserGroupServiceImpl;
 import org.jahia.modules.external.users.impl.UserDataSource;
 import org.jahia.modules.external.users.impl.UserGroupProviderRegistration;
@@ -86,12 +93,6 @@ import org.springframework.binding.message.MessageBuilder;
 import org.springframework.binding.message.MessageContext;
 import org.springframework.webflow.core.collection.MutableAttributeMap;
 import org.springframework.webflow.core.collection.ParameterMap;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Flow controller for the user/group providers.
@@ -226,14 +227,27 @@ public class UserGroupProviderAdminFlow implements Serializable {
      */
     public void resumeProvider(String providerKey, MessageContext messages) throws JahiaInitializationException {
         UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(providerKey);
-        JCRStoreProvider userProvider = registration.getUserProvider();
-        if (userProvider != null) {
-            userProvider.start();
+
+        boolean isUnavailable = true; // unavailable by default
+        String msg = "Unavailable";
+        try {
+            JCRStoreProvider userProvider = registration.getUserProvider();
+            if (userProvider != null) {
+                isUnavailable = !userProvider.start(true);
+            }
+
+            JCRStoreProvider groupProvider = registration.getGroupProvider();
+            if (groupProvider != null) {
+                isUnavailable = isUnavailable && !groupProvider.start(true);
+            }
+        } catch (JahiaInitializationException e) {
+            msg = e.getUserErrorMsg();
         }
-        JCRStoreProvider groupProvider = registration.getGroupProvider();
-        if (groupProvider != null) {
-            groupProvider.start();
+
+        if (isUnavailable) {
+            messages.addMessage(new MessageBuilder().error().code("label.userGroupProvider.resumeError").arg(msg).build());
         }
+
         addNoteForCluster(messages);
     }
 
@@ -270,7 +284,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
                         && (!sessionFactory.getProviders().containsKey(providerKey) || !sessionFactory.getProviders()
                                 .get(providerKey).isAvailable()) || (!shouldBeAvailable && sessionFactory
                         .getProviders().containsKey(providerKey)))) {
-            // wait for provider availability / unavilability if it's asynchronous
+            // wait for provider availability / unavailability if it's asynchronous
             try {
                 Thread.sleep(WAIT_SLEEP);
             } catch (InterruptedException e) {
