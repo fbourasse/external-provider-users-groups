@@ -87,7 +87,7 @@
   <scm>
     <connection>scm:git:git@github.com:Jahia/external-provider-users-groups.git</connection>
     <developerConnection>scm:git:git@github.com:Jahia/external-provider-users-groups.git</developerConnection>
-    <url>https://github.com/Jahia/external-provider-users-groups</url>
+    <url>scm:git:git@github.com:Jahia/external-provider-users-groups</url>
   </scm>
     <properties>
         <jahia-module-type>system</jahia-module-type>
