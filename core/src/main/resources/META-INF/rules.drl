@@ -1,0 +1,23 @@
+package org.jahia.modules.external.users.rules
+
+// list any import classes here
+import org.jahia.services.content.rules.*
+import org.jahia.services.content.*
+import org.slf4j.Logger
+
+
+expander rules.dsl
+
+// declare any global variables here
+global User user
+global Service service
+global Logger logger
+global ExternalUserGroupRuleService externalUserGroupRuleService
+
+rule "Check user providers waiting for a site"
+    when
+        A new node is created
+                    - the node has the type jnt:virtualsite
+    then
+>       externalUserGroupRuleService.checkUserProvidersWaitingForSite(node);
+end

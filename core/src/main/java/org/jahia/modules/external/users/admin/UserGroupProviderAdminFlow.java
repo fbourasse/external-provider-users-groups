@@ -77,6 +77,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jahia.exceptions.JahiaException;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.users.UserGroupProvider;
 import org.jahia.modules.external.users.UserGroupProviderConfiguration;
@@ -86,7 +87,11 @@ import org.jahia.modules.external.users.impl.UserGroupProviderRegistration;
 import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.content.JCRStoreProvider;
 import org.jahia.services.content.JCRStoreService;
+import org.jahia.services.sites.JahiaSite;
+import org.jahia.services.sites.JahiaSitesService;
 import org.jahia.settings.SettingsBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.binding.message.MessageBuilder;
@@ -99,6 +104,8 @@ import org.springframework.webflow.core.collection.ParameterMap;
  */
 public class UserGroupProviderAdminFlow implements Serializable {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserGroupProviderAdminFlow.class);
+
     private static final long AVAILABILITY_TIMEOUT = 60 * 1000L;
 
     private static final long serialVersionUID = 4171622809934546645L;
@@ -107,6 +114,8 @@ public class UserGroupProviderAdminFlow implements Serializable {
 
     @Autowired
     private transient ExternalUserGroupServiceImpl externalUserGroupServiceImpl;
+
+    private transient JahiaSitesService jahiaSitesService;
 
     private transient JCRStoreService jcrStoreService;
 
@@ -211,7 +220,17 @@ public class UserGroupProviderAdminFlow implements Serializable {
                 providerInfo.setEditJSP(configuration.getEditJSP());
                 providerInfo.setDeleteSupported(configuration.isDeleteSupported());
             }
-            providerInfo.setSiteKey(entry.getValue().getSiteKey());
+            String siteKey = entry.getValue().getSiteKey();
+            providerInfo.setSiteKey(siteKey);
+            JahiaSite targetSite = null;
+            if (siteKey != null) {
+                try {
+                    targetSite = jahiaSitesService.getSiteByKey(siteKey);
+                } catch (JahiaException e) {
+                    logger.debug("Cannot get site " + siteKey, e);
+                }
+            }
+            providerInfo.setTargetAvailable(siteKey == null || targetSite != null);
             infos.add(providerInfo);
         }
         return infos;
@@ -254,6 +273,11 @@ public class UserGroupProviderAdminFlow implements Serializable {
     @Autowired
     public void setJcrStoreService(@Value("#{JCRStoreService}") JCRStoreService jcrStoreService) {
         this.jcrStoreService = jcrStoreService;
+    }
+
+    @Autowired
+    public void setJahiaSitesService(@Value("#{JahiaSitesService}") JahiaSitesService jahiaSitesService) {
+        this.jahiaSitesService = jahiaSitesService;
     }
 
     /**

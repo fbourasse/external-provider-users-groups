@@ -89,6 +89,11 @@
             </td>
             <td>
                 <c:choose>
+                    <c:when test="${not userGroupProvider.targetAvailable}">
+                <span class="badge badge-important">
+                    <fmt:message key="label.userGroupProvider.targetUnavailable"/>
+                </span>
+                    </c:when>
                     <c:when test="${userGroupProvider.running}">
                 <span class="badge badge-success">
                     <fmt:message key="label.userGroupProvider.running"/>

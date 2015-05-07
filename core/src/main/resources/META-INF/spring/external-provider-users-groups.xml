@@ -19,6 +19,7 @@
 
   <bean id="ExternalUserGroupServiceImpl" class="org.jahia.modules.external.users.impl.ExternalUserGroupServiceImpl">
     <property name="jcrStoreService" ref="JCRStoreService"/>
+    <property name="jahiaSitesService" ref="JahiaSitesService"/>
     <property name="readOnlyUserProperties" value="${external.users.properties.readonly:j:firstName,j:lastName,j:organization,j:email}"/>
   </bean>
 
@@ -31,4 +32,17 @@
       </map>
     </property>
   </bean>
+
+  <bean id="ExternalUserGroupRuleService" class="org.jahia.modules.external.users.rules.ExternalUserGroupRuleService">
+    <property name="externalUserGroupService" ref="ExternalUserGroupServiceImpl"/>
+  </bean>
+
+  <bean class="org.jahia.services.content.rules.ModuleGlobalObject">
+    <property name="globalRulesObject">
+      <map>
+        <entry key="externalUserGroupRuleService" value-ref="ExternalUserGroupRuleService"/>
+      </map>
+    </property>
+  </bean>
+
 </beans>

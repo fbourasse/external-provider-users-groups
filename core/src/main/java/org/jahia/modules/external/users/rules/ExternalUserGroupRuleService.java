@@ -69,104 +69,25 @@
  *
  *     For more information, please visit http://www.jahia.com
  */
-package org.jahia.modules.external.users.admin;
+package org.jahia.modules.external.users.rules;
 
-import java.io.Serializable;
+import org.jahia.modules.external.users.impl.ExternalUserGroupServiceImpl;
+import org.jahia.services.content.JCRNodeWrapper;
+import org.jahia.services.content.rules.AddedNodeFact;
+import org.jahia.services.sites.JahiaSite;
 
-/**
- * Class to represent a user and group provider in a WebFlow
- */
-public class UserGroupProviderInfo implements Serializable {
+public class ExternalUserGroupRuleService {
 
-    private static final long serialVersionUID = 8377758659660801865L;
+    private ExternalUserGroupServiceImpl externalUserGroupService;
 
-    private boolean deleteSupported;
-    
-    private String editJSP;
-    
-    private boolean editSupported;
-    
-    private boolean groupSupported;
-    
-    private String key;
-    
-    private String providerClass;
-    
-    private boolean running;
-
-    private String siteKey;
-
-    private boolean targetAvailable = true;
-
-    public String getEditJSP() {
-        return editJSP;
+    public void checkUserProvidersWaitingForSite(AddedNodeFact nodeFact) {
+        JCRNodeWrapper node = nodeFact.getNode();
+        if (node instanceof JahiaSite) {
+            externalUserGroupService.checkUserProvidersWaitingForSite(((JahiaSite) node).getSiteKey());
+        }
     }
 
-    public String getKey() {
-        return key;
-    }
-
-    public String getProviderClass() {
-        return providerClass;
-    }
-
-    public String getSiteKey() {
-        return siteKey;
-    }
-
-    public boolean isDeleteSupported() {
-        return deleteSupported;
-    }
-
-    public boolean isEditSupported() {
-        return editSupported;
-    }
-
-    public boolean isGroupSupported() {
-        return groupSupported;
-    }
-
-    public boolean isRunning() {
-        return running;
-    }
-
-    public boolean isTargetAvailable() {
-        return targetAvailable;
-    }
-
-    public void setDeleteSupported(boolean deleteSupported) {
-        this.deleteSupported = deleteSupported;
-    }
-
-    public void setEditJSP(String editJSP) {
-        this.editJSP = editJSP;
-    }
-
-    public void setEditSupported(boolean editSupported) {
-        this.editSupported = editSupported;
-    }
-
-    public void setGroupSupported(boolean groupSupported) {
-        this.groupSupported = groupSupported;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public void setProviderClass(String providerClass) {
-        this.providerClass = providerClass;
-    }
-
-    public void setRunning(boolean running) {
-        this.running = running;
-    }
-
-    public void setSiteKey(String siteKey) {
-        this.siteKey = siteKey;
-    }
-
-    public void setTargetAvailable(boolean targetAvailable) {
-        this.targetAvailable = targetAvailable;
+    public void setExternalUserGroupService(ExternalUserGroupServiceImpl externalUserGroupService) {
+        this.externalUserGroupService = externalUserGroupService;
     }
 }

@@ -72,6 +72,7 @@
 package org.jahia.modules.external.users.impl;
 
 import org.apache.commons.lang.StringUtils;
+import org.jahia.exceptions.JahiaException;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.users.ExternalUserGroupService;
@@ -80,6 +81,8 @@ import org.jahia.modules.external.users.UserGroupProviderConfiguration;
 import org.jahia.services.SpringContextSingleton;
 import org.jahia.services.content.*;
 import org.jahia.services.content.decorator.JCRMountPointNode;
+import org.jahia.services.sites.JahiaSite;
+import org.jahia.services.sites.JahiaSitesService;
 import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,8 +104,11 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
     private static final Logger logger = LoggerFactory.getLogger(ExternalUserGroupServiceImpl.class);
 
     private static final String PROVIDERS_MOUNT_CONTAINER = "providers";
+    private static final String USERS_FOLDER_NAME = "users";
+    private static final String GROUPS_FOLDER_NAME = "groups";
 
     private JCRStoreService jcrStoreService;
+    private JahiaSitesService jahiaSitesService;
     private String readOnlyUserProperties;
     private Map<String, UserGroupProviderRegistration> registeredProviders = new TreeMap<String, UserGroupProviderRegistration>();
     private Map<String, UserGroupProviderConfiguration> providerConfigurations = new HashMap<String, UserGroupProviderConfiguration>();
@@ -114,56 +120,6 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
     @Override
     public void register(String providerKey, final String siteKey, final UserGroupProvider userGroupProvider) {
-        final String usersFolderName = "users";
-        final String groupsFolderName = "groups";
-
-        try {
-            JCRTemplate.getInstance().doExecuteWithSystemSession(new JCRCallback<Object>() {
-                @Override
-                public Object doInJCR(JCRSessionWrapper session) throws RepositoryException {
-                    JCRNodeWrapper rootNode;
-                    if (siteKey == null) {
-                        rootNode = session.getNode("/");
-                    } else {
-                        rootNode = session.getNode("/sites/" + siteKey);
-                    }
-
-                    boolean saveNeeded = false;
-                    JCRNodeWrapper node = rootNode;
-                    if (node.hasNode(usersFolderName)) {
-                        node = node.getNode(usersFolderName);
-                    } else {
-                        node = node.addNode(usersFolderName, "jnt:usersFolder");
-                        saveNeeded = true;
-                    }
-                    if (!node.hasNode(PROVIDERS_MOUNT_CONTAINER)) {
-                        node.addNode(PROVIDERS_MOUNT_CONTAINER, "jnt:usersFolder");
-                        saveNeeded = true;
-                    }
-                    if (userGroupProvider.supportsGroups()) {
-                        node = rootNode;
-                        if (node.hasNode(groupsFolderName)) {
-                            node = node.getNode(groupsFolderName);
-                        } else {
-                            node = node.addNode(groupsFolderName, "jnt:groupsFolder");
-                            saveNeeded = true;
-                        }
-                        if (!node.hasNode(PROVIDERS_MOUNT_CONTAINER)) {
-                            node.addNode(PROVIDERS_MOUNT_CONTAINER, "jnt:groupsFolder");
-                            saveNeeded = true;
-                        }
-                    }
-                    if (saveNeeded) {
-                        session.save();
-                    }
-                    return null;
-                }
-            });
-        } catch (RepositoryException e) {
-            logger.error("Failed to create providers mount containers", e);
-            return;
-        }
-
         String userProviderKey = providerKey + ".users";
         String groupProviderKey = providerKey + ".groups";
         Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
@@ -175,7 +131,7 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
                 ExternalContentStoreProvider userProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
                 userProvider.setKey(userProviderKey);
                 String sitePath = "/sites/" + siteKey + "/";
-                userProvider.setMountPoint((siteKey == null ? "/" : sitePath) + usersFolderName + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
+                userProvider.setMountPoint((siteKey == null ? "/" : sitePath) + USERS_FOLDER_NAME + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
                 userProvider.setDataSource(userDataSource);
                 userProvider.setExtendableTypes(EXTENDABLE_TYPES);
                 userProvider.setOverridableItems(OVERRIDABLE_ITEMS);
@@ -210,7 +166,7 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
                     ExternalContentStoreProvider groupProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
                     groupProvider.setKey(groupProviderKey);
-                    groupProvider.setMountPoint((siteKey == null ? "/" : sitePath)+ groupsFolderName + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
+                    groupProvider.setMountPoint((siteKey == null ? "/" : sitePath)+ GROUPS_FOLDER_NAME + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
                     groupProvider.setDataSource(groupDataSource);
 
                     groupDataSource.setContentStoreProvider(groupProvider);
@@ -221,6 +177,83 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
                 }
             } catch (JahiaInitializationException e) {
                 logger.error(e.getMessage(), e);
+            }
+        }
+
+        createMissingStructure(siteKey, userGroupProvider.supportsGroups());
+    }
+
+    private void createMissingStructure(final String siteKey, final boolean supportsGroups) {
+        try {
+            JCRTemplate.getInstance().doExecuteWithSystemSession(new JCRCallback<Object>() {
+                @Override
+                public Object doInJCR(JCRSessionWrapper session) throws RepositoryException {
+                    JCRNodeWrapper rootNode = null;
+                    if (siteKey == null) {
+                        rootNode = session.getNode("/");
+                    } else {
+                        String path = "/sites/" + siteKey;
+                        if (session.nodeExists(path)) {
+                            rootNode = session.getNode(path);
+                        }
+                    }
+                    if (rootNode == null) {
+                        return null;
+                    }
+
+                    boolean saveNeeded = false;
+                    JCRNodeWrapper node = rootNode;
+                    if (node.hasNode(USERS_FOLDER_NAME)) {
+                        node = node.getNode(USERS_FOLDER_NAME);
+                    } else {
+                        node = node.addNode(USERS_FOLDER_NAME, "jnt:usersFolder");
+                        saveNeeded = true;
+                    }
+                    if (!node.hasNode(PROVIDERS_MOUNT_CONTAINER)) {
+                        node.addNode(PROVIDERS_MOUNT_CONTAINER, "jnt:usersFolder");
+                        saveNeeded = true;
+                    }
+                    if (supportsGroups) {
+                        node = rootNode;
+                        if (node.hasNode(GROUPS_FOLDER_NAME)) {
+                            node = node.getNode(GROUPS_FOLDER_NAME);
+                        } else {
+                            node = node.addNode(GROUPS_FOLDER_NAME, "jnt:groupsFolder");
+                            saveNeeded = true;
+                        }
+                        if (!node.hasNode(PROVIDERS_MOUNT_CONTAINER)) {
+                            node.addNode(PROVIDERS_MOUNT_CONTAINER, "jnt:groupsFolder");
+                            saveNeeded = true;
+                        }
+                    }
+                    if (saveNeeded) {
+                        session.save();
+                    }
+                    return null;
+                }
+            });
+        } catch (RepositoryException e) {
+            logger.error("Failed to create providers mount containers", e);
+            return;
+        }
+    }
+
+    public void checkUserProvidersWaitingForSite(String newSiteKey) {
+        for (Map.Entry<String, UserGroupProviderRegistration> entry : getRegisteredProviders().entrySet()) {
+            String siteKey = entry.getValue().getSiteKey();
+            if (siteKey == null || !siteKey.equals(newSiteKey)) {
+                continue;
+            }
+            JahiaSite targetSite = null;
+            if (siteKey != null) {
+                try {
+                    targetSite = jahiaSitesService.getSiteByKey(siteKey);
+                } catch (JahiaException e) {
+                    logger.debug("Cannot get site " + siteKey, e);
+                }
+            }
+            if (targetSite != null) {
+                createMissingStructure(siteKey, entry.getValue().getGroupProvider() != null);
             }
         }
     }
@@ -275,5 +308,9 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
     public JCRStoreService getJcrStoreService() {
         return jcrStoreService;
+    }
+
+    public void setJahiaSitesService(JahiaSitesService jahiaSitesService) {
+        this.jahiaSitesService = jahiaSitesService;
     }
 }
