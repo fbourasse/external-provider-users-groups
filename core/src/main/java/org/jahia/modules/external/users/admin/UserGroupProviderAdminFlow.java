@@ -79,12 +79,12 @@ import java.util.Map;
 
 import org.jahia.exceptions.JahiaException;
 import org.jahia.exceptions.JahiaInitializationException;
+import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.users.UserGroupProvider;
 import org.jahia.modules.external.users.UserGroupProviderConfiguration;
 import org.jahia.modules.external.users.impl.ExternalUserGroupServiceImpl;
 import org.jahia.modules.external.users.impl.UserDataSource;
 import org.jahia.modules.external.users.impl.UserGroupProviderRegistration;
-import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.content.JCRStoreProvider;
 import org.jahia.services.content.JCRStoreService;
 import org.jahia.services.sites.JahiaSite;
@@ -134,7 +134,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
         String providerClass = parameters.get("providerClass");
         @SuppressWarnings("unchecked")
         String providerKey = configurations.get(providerClass).create(parameters.asMap(), flashScope.asMap()) + ".users";
-        wait(providerKey, true);
+        wait(providerKey, true, messages);
         addNoteForCluster(messages);
     }
 
@@ -155,7 +155,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
         configurations.get(providerClass).delete(providerKey, flashScope.asMap());
         providerKey += ".users";
-        wait(providerKey, false);
+        wait(providerKey, false, messages);
         addNoteForCluster(messages);
     }
 
@@ -176,7 +176,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
         String providerClass = parameters.get("providerClass");
         configurations.get(providerClass).edit(providerKey, parameters.asMap(), flashScope.asMap());
         providerKey += ".users";
-        wait(providerKey, true);
+        wait(providerKey, true, messages);
         addNoteForCluster(messages);
     }
 
@@ -281,10 +281,9 @@ public class UserGroupProviderAdminFlow implements Serializable {
     }
 
     /**
-     * Resumes the provider.
-     * 
-     * @param providerKey
-     *            the key of the provider to be resumed
+     * Suspends the provider.
+     *
+     * @param providerKey the key of the provider to be resumed
      */
     public void suspendProvider(String providerKey, MessageContext messages) {
         UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(providerKey);
@@ -299,15 +298,42 @@ public class UserGroupProviderAdminFlow implements Serializable {
         addNoteForCluster(messages);
     }
 
-    private void wait(String providerKey, boolean shouldBeAvailable) {
-        JCRSessionFactory sessionFactory = jcrStoreService.getSessionFactory();
-        
-        long endTime = System.currentTimeMillis() + AVAILABILITY_TIMEOUT;
-        while (System.currentTimeMillis() < endTime
-                && (shouldBeAvailable
-                        && (!sessionFactory.getProviders().containsKey(providerKey) || !sessionFactory.getProviders()
-                                .get(providerKey).isAvailable()) || (!shouldBeAvailable && sessionFactory
-                        .getProviders().containsKey(providerKey)))) {
+    private void wait(String providerKey, boolean shouldBeAvailable, MessageContext messages) {
+        final long startTime = System.currentTimeMillis();
+        long endTime = startTime + AVAILABILITY_TIMEOUT;
+
+        final String registrationKey = providerKey.substring(0, providerKey.lastIndexOf('.'));
+        final Map<String, UserGroupProviderRegistration> registeredProviders = externalUserGroupServiceImpl.getRegisteredProviders();
+
+        while (System.currentTimeMillis() < endTime) {
+            final UserGroupProviderRegistration registration = registeredProviders.get(registrationKey);
+
+            if (shouldBeAvailable) {
+                if (registration != null) {
+                    final ExternalContentStoreProvider provider = registration.getUserProvider();
+                    if (provider != null) {
+                        final boolean available = provider.isAvailable();
+
+                        if (!available) {
+                            final String statusMessage = provider.getMountStatusMessage();
+                            if (statusMessage != null) {
+                                messages.addMessage(new MessageBuilder().error().code("label.userGroupProvider.createError").arg(statusMessage).build());
+                                // todo: maybe use error mount status?
+                                provider.setMountStatusMessage(null);
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            } else {
+                if (registration != null) {
+                    registeredProviders.remove(registrationKey);
+                }
+                break;
+            }
+
             // wait for provider availability / unavailability if it's asynchronous
             try {
                 Thread.sleep(WAIT_SLEEP);

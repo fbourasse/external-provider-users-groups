@@ -88,7 +88,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jcr.RepositoryException;
-
 import java.util.*;
 
 /**
@@ -278,15 +277,29 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
     }
 
     @Override
-    public void setMountStatus(String providerKey, JCRMountPointNode.MountStatus status) {
+    public void setMountStatus(String providerKey, JCRMountPointNode.MountStatus status, String message) {
         Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
-        JCRStoreProvider provider = providers.get(providerKey + ".users");
+
+        // set the status of the provider in the registered ones
+        JCRStoreProvider provider;
+        final UserGroupProviderRegistration registration = registeredProviders.get(providerKey);
+        provider = registration.getUserProvider();
         if (provider != null) {
-            provider.setMountStatus(status);
+            provider.setMountStatus(status, message);
+        }
+
+        provider = registration.getGroupProvider();
+        if (provider != null) {
+            provider.setMountStatus(status, message);
+        }
+
+        provider = providers.get(providerKey + ".users");
+        if (provider != null) {
+            provider.setMountStatus(status, message);
         }
         provider = providers.get(providerKey + ".groups");
         if (provider != null) {
-            provider.setMountStatus(status);
+            provider.setMountStatus(status, message);
         }
     }
 

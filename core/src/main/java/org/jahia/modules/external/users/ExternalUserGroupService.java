@@ -123,6 +123,7 @@ public interface ExternalUserGroupService {
      * Allow to change the status of a given provider
      * @param providerKey
      * @param status
+     * @param message
      */
-    public void setMountStatus(String providerKey, JCRMountPointNode.MountStatus status);
+    void setMountStatus(String providerKey, JCRMountPointNode.MountStatus status, String message);
 }
