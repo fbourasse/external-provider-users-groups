@@ -99,7 +99,7 @@ public class TxtxUserGroupProvider implements UserGroupProvider {
         if (users.contains(name)) {
             Properties properties = new Properties();
             properties.put("j:email", "mail@tx.tx");
-            return new JahiaUserImpl(name, name, properties, false, TXTX_PROVIDER_KEY);
+            return new JahiaUserImpl(name, name, properties, TXTX_PROVIDER_KEY);
         }
         throw new UserNotFoundException("Cannot find user " + name);
     }
