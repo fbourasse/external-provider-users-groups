@@ -84,22 +84,18 @@ import javax.jcr.RepositoryException;
 import java.util.*;
 import java.util.regex.Pattern;
 
-public class TxtxUserGroupProvider implements UserGroupProvider {
-
-    public static final String TXTX_PROVIDER_KEY = "txtx";
+public class TxtxUserGroupProvider extends BaseUserGroupProvider {
 
     private List<String> users = Arrays.asList("tata", "tete", "titi");
 
     private List<String> groups = Arrays.asList("toto", "tutu", "tyty");
-
-    private ExternalUserGroupService externalUserGroupService;
 
     @Override
     public JahiaUser getUser(String name) throws UserNotFoundException {
         if (users.contains(name)) {
             Properties properties = new Properties();
             properties.put("j:email", "mail@tx.tx");
-            return new JahiaUserImpl(name, name, properties, TXTX_PROVIDER_KEY);
+            return new JahiaUserImpl(name, name, properties, getKey());
         }
         throw new UserNotFoundException("Cannot find user " + name);
     }
@@ -192,17 +188,5 @@ public class TxtxUserGroupProvider implements UserGroupProvider {
     @Override
     public boolean isAvailable() throws RepositoryException {
         return true;
-    }
-
-    public void init() {
-        externalUserGroupService.register("txtx", this);
-    }
-
-    public void destroy() {
-        externalUserGroupService.unregister("txtx");
-    }
-
-    public void setExternalUserGroupService(ExternalUserGroupService externalUserGroupService) {
-        this.externalUserGroupService = externalUserGroupService;
     }
 }
