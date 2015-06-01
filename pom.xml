@@ -80,7 +80,7 @@
         <version>7.1.0.0-RC</version>
         <relativePath />
     </parent>
-    <version>1.0.0-RC</version>
+    <version>1.0.0-SNAPSHOT</version>
     <artifactId>external-provider-users-groups-parent</artifactId>
     <name>Jahia External Provider Users and Groups Parent</name>
     <packaging>pom</packaging>
@@ -90,7 +90,7 @@
       <connection>scm:git:git@github.com:Jahia/external-provider-users-groups.git</connection>
       <developerConnection>scm:git:git@github.com:Jahia/external-provider-users-groups.git</developerConnection>
       <url>scm:git:git@github.com:Jahia/external-provider-users-groups</url>
-      <tag>1_0_0_RC</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <repositories>
