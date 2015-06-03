@@ -73,7 +73,6 @@ package org.jahia.test.external.users;
 
 import com.google.common.collect.Sets;
 
-import org.jahia.modules.external.users.impl.JCRExternalUserNode;
 import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.decorator.JCRGroupNode;
 import org.jahia.services.content.decorator.JCRUserNode;
@@ -137,7 +136,7 @@ public class ExternalUsersProviderTest extends JahiaTestCase {
     public void testPassword() throws RepositoryException {
         JCRUserNode tata = jahiaUserManagerService.lookupUser("tata");
         assertNotNull("User should exist", tata);
-        assertTrue("User should be external", tata instanceof JCRExternalUserNode);
+        assertTrue("User should be external", tata.getClass().getName().equals("org.jahia.modules.external.users.impl.JCRExternalUserNode"));
         assertTrue(tata.verifyPassword("password"));
     }
 
