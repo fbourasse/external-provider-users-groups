@@ -90,7 +90,8 @@
       <connection>scm:git:git@github.com:Jahia/external-provider-users-groups.git</connection>
       <developerConnection>scm:git:git@github.com:Jahia/external-provider-users-groups.git</developerConnection>
       <url>scm:git:git@github.com:Jahia/external-provider-users-groups</url>
-    </scm>
+      <tag>HEAD</tag>
+  </scm>
 
     <repositories>
         <repository>
