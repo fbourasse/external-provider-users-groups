@@ -257,7 +257,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
 
             JCRStoreProvider groupProvider = registration.getGroupProvider();
             if (groupProvider != null) {
-                isUnavailable = isUnavailable && !groupProvider.start(true);
+                isUnavailable = isUnavailable || !groupProvider.start(true);
             }
         } catch (JahiaInitializationException e) {
             msg = e.getUserErrorMsg();
