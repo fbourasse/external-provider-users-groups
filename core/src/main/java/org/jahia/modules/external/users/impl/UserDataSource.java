@@ -207,7 +207,7 @@ public class UserDataSource implements ExternalDataSource, ExternalDataSource.Se
     @Override
     public List<String> search(ExternalQuery externalQuery) throws RepositoryException {
         Properties searchCriteria = new Properties();
-        boolean hasOrConstraints = SearchCriteriaHelper.fillCriteriaFromConstraint(externalQuery.getConstraint(), searchCriteria, "username");
+        boolean hasOrConstraints = SearchCriteriaHelper.getCriteriaFromConstraints(externalQuery.getConstraint(), searchCriteria, "username");
         searchCriteria.remove("jcr:language");
         // abort the search if we are only looking for internal users.
         if(searchCriteria.containsKey(JCRUserNode.J_EXTERNAL) && !Boolean.valueOf(searchCriteria.getProperty(JCRUserNode.J_EXTERNAL))){

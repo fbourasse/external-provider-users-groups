@@ -315,7 +315,7 @@ public class GroupDataSource implements ExternalDataSource, ExternalDataSource.S
     @Override
     public List<String> search(ExternalQuery externalQuery) throws RepositoryException {
         Properties searchCriteria = new Properties();
-        SearchCriteriaHelper.fillCriteriaFromConstraint(externalQuery.getConstraint(), searchCriteria, "groupname");
+        SearchCriteriaHelper.getCriteriaFromConstraints(externalQuery.getConstraint(), searchCriteria, "groupname");
         searchCriteria.remove("jcr:language");
         List<String> result = new ArrayList<String>();
         try {
