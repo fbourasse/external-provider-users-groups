@@ -69,7 +69,7 @@
  *
  *     For more information, please visit http://www.jahia.com
  */
-package org.jahia.modules.external.users.impl;
+package org.jahia.modules.external.users;
 
 import org.jahia.modules.external.ExternalContentStoreProvider;
 
@@ -81,36 +81,22 @@ import java.io.Serializable;
 public class UserGroupProviderRegistration implements Serializable {
 
     private static final long serialVersionUID = 2151331267633066668L;
-    
-    private ExternalContentStoreProvider groupProvider;
-    
+
     private String siteKey;
-    
     private ExternalContentStoreProvider userProvider;
-    
-    /**
-     * Initializes an instance of this class.
-     */
-    public UserGroupProviderRegistration() {
-        super();
-    }
+    private ExternalContentStoreProvider groupProvider;
 
     /**
      * Initializes an instance of this class.
-     * 
-     * @param siteKey
-     *            the target site key
-     * @param userProvider
-     *            the user provider to be registered
+     *
+     * @param siteKey the target site key
+     * @param userProvider the user provider to be registered
+     * @param groupProvider the group provider to be registered
      */
-    public UserGroupProviderRegistration(String siteKey, ExternalContentStoreProvider userProvider) {
-        this();
+    public UserGroupProviderRegistration(String siteKey, ExternalContentStoreProvider userProvider, ExternalContentStoreProvider groupProvider) {
         this.siteKey = siteKey;
         this.userProvider = userProvider;
-    }
-
-    public ExternalContentStoreProvider getGroupProvider() {
-        return groupProvider;
+        this.groupProvider = groupProvider;
     }
 
     public String getSiteKey() {
@@ -121,15 +107,7 @@ public class UserGroupProviderRegistration implements Serializable {
         return userProvider;
     }
 
-    public void setGroupProvider(ExternalContentStoreProvider groupProvider) {
-        this.groupProvider = groupProvider;
-    }
-
-    public void setSiteKey(String siteKey) {
-        this.siteKey = siteKey;
-    }
-
-    public void setUserProvider(ExternalContentStoreProvider userProvider) {
-        this.userProvider = userProvider;
+    public ExternalContentStoreProvider getGroupProvider() {
+        return groupProvider;
     }
 }

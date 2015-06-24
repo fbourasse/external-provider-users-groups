@@ -78,8 +78,13 @@ import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.users.ExternalUserGroupService;
 import org.jahia.modules.external.users.UserGroupProvider;
 import org.jahia.modules.external.users.UserGroupProviderConfiguration;
+import org.jahia.modules.external.users.UserGroupProviderRegistration;
 import org.jahia.services.SpringContextSingleton;
-import org.jahia.services.content.*;
+import org.jahia.services.content.JCRCallback;
+import org.jahia.services.content.JCRNodeWrapper;
+import org.jahia.services.content.JCRSessionWrapper;
+import org.jahia.services.content.JCRStoreProvider;
+import org.jahia.services.content.JCRTemplate;
 import org.jahia.services.content.decorator.JCRMountPointNode;
 import org.jahia.services.sites.JahiaSite;
 import org.jahia.services.sites.JahiaSitesService;
@@ -88,7 +93,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jcr.RepositoryException;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Implementation of the external user/group service.
@@ -96,21 +108,16 @@ import java.util.*;
 public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
     private static final List<String> EXTENDABLE_TYPES = Arrays.asList("nt:base");
-
-    private static final List<String> OVERRIDABLE_ITEMS = Arrays.asList("jnt:user.*", "jnt:usersFolder.*",
-            "mix:lastModified.*", "jmix:lastPublished.*");
-
-    private static final Logger logger = LoggerFactory.getLogger(ExternalUserGroupServiceImpl.class);
-
+    private static final List<String> OVERRIDABLE_ITEMS = Arrays.asList("jnt:user.*", "jnt:usersFolder.*", "mix:lastModified.*", "jmix:lastPublished.*");
     private static final String PROVIDERS_MOUNT_CONTAINER = "providers";
     private static final String USERS_FOLDER_NAME = "users";
     private static final String GROUPS_FOLDER_NAME = "groups";
+    private static final Logger logger = LoggerFactory.getLogger(ExternalUserGroupServiceImpl.class);
 
-    private JCRStoreService jcrStoreService;
     private JahiaSitesService jahiaSitesService;
     private String readOnlyUserProperties;
-    private Map<String, UserGroupProviderRegistration> registeredProviders = new TreeMap<String, UserGroupProviderRegistration>();
-    private Map<String, UserGroupProviderConfiguration> providerConfigurations = new HashMap<String, UserGroupProviderConfiguration>();
+    private Map<String, UserGroupProviderRegistration> registeredProviders = new ConcurrentSkipListMap<String, UserGroupProviderRegistration>();
+    private Map<String, UserGroupProviderConfiguration> providerConfigurations = new ConcurrentHashMap<String, UserGroupProviderConfiguration>();
 
     @Override
     public void register(String providerKey, final UserGroupProvider userGroupProvider) {
@@ -118,15 +125,16 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
     }
 
     @Override
-    public void register(String providerKey, final String siteKey, final UserGroupProvider userGroupProvider) {
+    public synchronized void register(String providerKey, final String siteKey, final UserGroupProvider userGroupProvider) {
+
         String userProviderKey = providerKey + ".users";
         String groupProviderKey = providerKey + ".groups";
-        Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
-        if (providers.get(userProviderKey) == null && providers.get(groupProviderKey) == null) {
+
+        if (!registeredProviders.containsKey(providerKey)) {
             try {
+
                 UserDataSource userDataSource = (UserDataSource) SpringContextSingleton.getBeanInModulesContext("UserDataSourcePrototype");
                 userDataSource.setUserGroupProvider(userGroupProvider);
-
                 ExternalContentStoreProvider userProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
                 userProvider.setKey(userProviderKey);
                 String sitePath = "/sites/" + siteKey + "/";
@@ -149,31 +157,27 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
                         userProvider.setNonOverridableItems(nonOverridableItems);
                     }
                 }
-
                 userDataSource.setContentStoreProvider(userProvider);
 
-                UserGroupProviderRegistration registration = new UserGroupProviderRegistration(siteKey, userProvider);
-                registeredProviders.put(providerKey, registration);
-
-                userProvider.start();
-
-
+                ExternalContentStoreProvider groupProvider = null;
                 if (userGroupProvider.supportsGroups()) {
                     GroupDataSource groupDataSource = (GroupDataSource) SpringContextSingleton.getBeanInModulesContext("GroupDataSourcePrototype");
                     groupDataSource.setUserDataSource(userDataSource);
                     groupDataSource.setUserGroupProvider(userGroupProvider);
-
-                    ExternalContentStoreProvider groupProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
+                    groupProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
                     groupProvider.setKey(groupProviderKey);
                     groupProvider.setMountPoint((siteKey == null ? "/" : sitePath)+ GROUPS_FOLDER_NAME + "/" + PROVIDERS_MOUNT_CONTAINER + "/" + providerKey);
                     groupProvider.setDataSource(groupDataSource);
-
                     groupDataSource.setContentStoreProvider(groupProvider);
+                }
 
-                    registration.setGroupProvider(groupProvider);
+                registeredProviders.put(providerKey, new UserGroupProviderRegistration(siteKey, userProvider, groupProvider));
 
+                userProvider.start();
+                if (groupProvider != null) {
                     groupProvider.start();
                 }
+
             } catch (JahiaInitializationException e) {
                 logger.error(e.getMessage(), e);
             }
@@ -182,11 +186,14 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
         createMissingStructure(siteKey, userGroupProvider.supportsGroups());
     }
 
-    private void createMissingStructure(final String siteKey, final boolean supportsGroups) {
+    private static void createMissingStructure(final String siteKey, final boolean supportsGroups) {
+
         try {
             JCRTemplate.getInstance().doExecuteWithSystemSession(new JCRCallback<Object>() {
+
                 @Override
                 public Object doInJCR(JCRSessionWrapper session) throws RepositoryException {
+
                     JCRNodeWrapper rootNode = null;
                     if (siteKey == null) {
                         rootNode = session.getNode("/");
@@ -233,23 +240,21 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
             });
         } catch (RepositoryException e) {
             logger.error("Failed to create providers mount containers", e);
-            return;
         }
     }
 
-    public void checkUserProvidersWaitingForSite(String newSiteKey) {
-        for (Map.Entry<String, UserGroupProviderRegistration> entry : getRegisteredProviders().entrySet()) {
+    @Override
+    public void initSiteForPendingProviders(String newSiteKey) {
+        for (Map.Entry<String, UserGroupProviderRegistration> entry : registeredProviders.entrySet()) {
             String siteKey = entry.getValue().getSiteKey();
             if (siteKey == null || !siteKey.equals(newSiteKey)) {
                 continue;
             }
             JahiaSite targetSite = null;
-            if (siteKey != null) {
-                try {
-                    targetSite = jahiaSitesService.getSiteByKey(siteKey);
-                } catch (JahiaException e) {
-                    logger.debug("Cannot get site " + siteKey, e);
-                }
+            try {
+                targetSite = jahiaSitesService.getSiteByKey(siteKey);
+            } catch (JahiaException e) {
+                logger.debug("Cannot get site " + siteKey, e);
             }
             if (targetSite != null) {
                 createMissingStructure(siteKey, entry.getValue().getGroupProvider() != null);
@@ -258,17 +263,18 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
     }
 
     @Override
-    public void unregister(String providerKey) {
-        Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
-        JCRStoreProvider provider = providers.get(providerKey + ".users");
-        if (provider != null) {
-            provider.stop();
-        }
-        provider = providers.get(providerKey + ".groups");
-        if (provider != null) {
-            provider.stop();
-        }
+    public synchronized void unregister(String providerKey) {
+        UserGroupProviderRegistration registration = registeredProviders.get(providerKey);
+        stopProvider(registration.getUserProvider());
+        stopProvider(registration.getGroupProvider());
         registeredProviders.remove(providerKey);
+    }
+
+    private void stopProvider(JCRStoreProvider provider) {
+        if (provider == null) {
+            return;
+        }
+        provider.stop();
     }
 
     @Override
@@ -278,49 +284,30 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
     @Override
     public void setMountStatus(String providerKey, JCRMountPointNode.MountStatus status, String message) {
-        Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
-
-        // set the status of the provider in the registered ones
-        JCRStoreProvider provider;
-        final UserGroupProviderRegistration registration = registeredProviders.get(providerKey);
-        provider = registration.getUserProvider();
-        if (provider != null) {
-            provider.setMountStatus(status, message);
-        }
-
-        provider = registration.getGroupProvider();
-        if (provider != null) {
-            provider.setMountStatus(status, message);
-        }
-
-        provider = providers.get(providerKey + ".users");
-        if (provider != null) {
-            provider.setMountStatus(status, message);
-        }
-        provider = providers.get(providerKey + ".groups");
-        if (provider != null) {
-            provider.setMountStatus(status, message);
-        }
+        UserGroupProviderRegistration registration = registeredProviders.get(providerKey);
+        setProviderMountStatus(registration.getUserProvider(), status, message);
+        setProviderMountStatus(registration.getGroupProvider(), status, message);
     }
 
+    private void setProviderMountStatus(JCRStoreProvider provider, JCRMountPointNode.MountStatus status, String message) {
+        if (provider == null) {
+            return;
+        }
+        provider.setMountStatus(status, message);
+    }
+
+    @Override
     public Map<String, UserGroupProviderConfiguration> getProviderConfigurations() {
-        return providerConfigurations;
+        return Collections.unmodifiableMap(providerConfigurations);
     }
 
+    @Override
     public Map<String, UserGroupProviderRegistration> getRegisteredProviders() {
-        return registeredProviders;
-    }
-
-    public void setJcrStoreService(JCRStoreService jcrStoreService) {
-        this.jcrStoreService = jcrStoreService;
+        return Collections.unmodifiableMap(registeredProviders);
     }
 
     public void setReadOnlyUserProperties(String readOnlyUserProperties) {
         this.readOnlyUserProperties = readOnlyUserProperties;
-    }
-
-    public JCRStoreService getJcrStoreService() {
-        return jcrStoreService;
     }
 
     public void setJahiaSitesService(JahiaSitesService jahiaSitesService) {

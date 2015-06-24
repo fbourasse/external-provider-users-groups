@@ -80,11 +80,11 @@ import java.util.Map;
 import org.jahia.exceptions.JahiaException;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
+import org.jahia.modules.external.users.ExternalUserGroupService;
 import org.jahia.modules.external.users.UserGroupProvider;
 import org.jahia.modules.external.users.UserGroupProviderConfiguration;
-import org.jahia.modules.external.users.impl.ExternalUserGroupServiceImpl;
+import org.jahia.modules.external.users.UserGroupProviderRegistration;
 import org.jahia.modules.external.users.impl.UserDataSource;
-import org.jahia.modules.external.users.impl.UserGroupProviderRegistration;
 import org.jahia.services.content.JCRStoreProvider;
 import org.jahia.services.content.JCRStoreService;
 import org.jahia.services.sites.JahiaSite;
@@ -113,7 +113,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
     private static final int WAIT_SLEEP = 2000;
 
     @Autowired
-    private transient ExternalUserGroupServiceImpl externalUserGroupServiceImpl;
+    private transient ExternalUserGroupService externalUserGroupService;
 
     private transient JahiaSitesService jahiaSitesService;
 
@@ -121,7 +121,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
 
     /**
      * Performs the creation of the provider.
-     * 
+     *
      * @param parameters
      *            flow parameter map
      * @param flashScope
@@ -129,10 +129,9 @@ public class UserGroupProviderAdminFlow implements Serializable {
      * @throws Exception
      *             in case of a creation error
      */
-    public void createProvider(ParameterMap parameters, MutableAttributeMap flashScope, MessageContext messages) throws Exception {
-        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
+    public void createProvider(ParameterMap parameters, MutableAttributeMap<Object> flashScope, MessageContext messages) throws Exception {
+        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupService.getProviderConfigurations();
         String providerClass = parameters.get("providerClass");
-        @SuppressWarnings("unchecked")
         String providerKey = configurations.get(providerClass).create(parameters.asMap(), flashScope.asMap()) + ".users";
         wait(providerKey, true, messages);
         addNoteForCluster(messages);
@@ -140,7 +139,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
 
     /**
      * Performs deletion of the provider
-     * 
+     *
      * @param providerKey
      *            the key of the provider
      * @param providerClass
@@ -150,9 +149,8 @@ public class UserGroupProviderAdminFlow implements Serializable {
      * @throws Exception
      *             in case of an error during deletion
      */
-    @SuppressWarnings("unchecked")
-    public void deleteProvider(String providerKey, String providerClass, MutableAttributeMap flashScope, MessageContext messages) throws Exception {
-        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
+    public void deleteProvider(String providerKey, String providerClass, MutableAttributeMap<Object> flashScope, MessageContext messages) throws Exception {
+        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupService.getProviderConfigurations();
         configurations.get(providerClass).delete(providerKey, flashScope.asMap());
         providerKey += ".users";
         wait(providerKey, false, messages);
@@ -161,7 +159,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
 
     /**
      * Performs the edition of the provider configuration.
-     * 
+     *
      * @param parameters
      *            flow parameter map
      * @param flashScope
@@ -169,9 +167,8 @@ public class UserGroupProviderAdminFlow implements Serializable {
      * @throws Exception
      *             in case of an error during edition
      */
-    @SuppressWarnings("unchecked")
-    public void editProvider(ParameterMap parameters, MutableAttributeMap flashScope, MessageContext messages) throws Exception {
-        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
+    public void editProvider(ParameterMap parameters, MutableAttributeMap<Object> flashScope, MessageContext messages) throws Exception {
+        Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupService.getProviderConfigurations();
         String providerKey = parameters.get("providerKey");
         String providerClass = parameters.get("providerClass");
         configurations.get(providerClass).edit(providerKey, parameters.asMap(), flashScope.asMap());
@@ -182,12 +179,12 @@ public class UserGroupProviderAdminFlow implements Serializable {
 
     /**
      * Returns the provider create configuration map.
-     * 
+     *
      * @return the provider create configuration map
      */
     public Map<String, UserGroupProviderConfiguration> getCreateConfigurations() {
         HashMap<String, UserGroupProviderConfiguration> map = new HashMap<String, UserGroupProviderConfiguration>();
-        for (Map.Entry<String, UserGroupProviderConfiguration> entry : externalUserGroupServiceImpl.getProviderConfigurations().entrySet()) {
+        for (Map.Entry<String, UserGroupProviderConfiguration> entry : externalUserGroupService.getProviderConfigurations().entrySet()) {
             if (entry.getValue().isCreateSupported()) {
                 map.put(entry.getKey(), entry.getValue());
             }
@@ -197,13 +194,13 @@ public class UserGroupProviderAdminFlow implements Serializable {
 
     /**
      * Returns a list of registered user/group providers.
-     * 
+     *
      * @return a list of registered user/group providers
      */
     public List<UserGroupProviderInfo> getUserGroupProviders() {
         ArrayList<UserGroupProviderInfo> infos = new ArrayList<UserGroupProviderInfo>();
         Map<String, JCRStoreProvider> providers = jcrStoreService.getSessionFactory().getProviders();
-        for (Map.Entry<String, UserGroupProviderRegistration> entry : externalUserGroupServiceImpl.getRegisteredProviders().entrySet()) {
+        for (Map.Entry<String, UserGroupProviderRegistration> entry : externalUserGroupService.getRegisteredProviders().entrySet()) {
             UserGroupProviderInfo providerInfo = new UserGroupProviderInfo();
             providerInfo.setKey(entry.getKey());
             UserDataSource dataSource = (UserDataSource) entry.getValue().getUserProvider().getDataSource();
@@ -213,7 +210,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
             providerInfo.setGroupSupported(userGroupProvider.supportsGroups());
             JCRStoreProvider prov = providers.get(entry.getKey() + ".users");
             providerInfo.setRunning(prov != null && prov.isAvailable());
-            Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupServiceImpl.getProviderConfigurations();
+            Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupService.getProviderConfigurations();
             UserGroupProviderConfiguration configuration = configurations.get(userGroupProviderClass);
             if (configuration != null) {
                 providerInfo.setEditSupported(configuration.isEditSupported());
@@ -238,14 +235,14 @@ public class UserGroupProviderAdminFlow implements Serializable {
 
     /**
      * Resumes the specified provider.
-     * 
+     *
      * @param providerKey
      *            the key of the provider to be resumed
      * @throws JahiaInitializationException
      *             in case of a provider initialization error
      */
     public void resumeProvider(String providerKey, MessageContext messages) throws JahiaInitializationException {
-        UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(providerKey);
+        UserGroupProviderRegistration registration = externalUserGroupService.getRegisteredProviders().get(providerKey);
 
         boolean isUnavailable = true; // unavailable by default
         String msg = "Unavailable";
@@ -286,7 +283,7 @@ public class UserGroupProviderAdminFlow implements Serializable {
      * @param providerKey the key of the provider to be resumed
      */
     public void suspendProvider(String providerKey, MessageContext messages) {
-        UserGroupProviderRegistration registration = externalUserGroupServiceImpl.getRegisteredProviders().get(providerKey);
+        UserGroupProviderRegistration registration = externalUserGroupService.getRegisteredProviders().get(providerKey);
         JCRStoreProvider userProvider = registration.getUserProvider();
         if (userProvider != null) {
             userProvider.stop();
@@ -299,13 +296,15 @@ public class UserGroupProviderAdminFlow implements Serializable {
     }
 
     private void wait(String providerKey, boolean shouldBeAvailable, MessageContext messages) {
+
         final long startTime = System.currentTimeMillis();
         long endTime = startTime + AVAILABILITY_TIMEOUT;
 
         final String registrationKey = providerKey.substring(0, providerKey.lastIndexOf('.'));
-        final Map<String, UserGroupProviderRegistration> registeredProviders = externalUserGroupServiceImpl.getRegisteredProviders();
+        final Map<String, UserGroupProviderRegistration> registeredProviders = externalUserGroupService.getRegisteredProviders();
 
         while (System.currentTimeMillis() < endTime) {
+
             final UserGroupProviderRegistration registration = registeredProviders.get(registrationKey);
 
             if (shouldBeAvailable) {
@@ -313,7 +312,6 @@ public class UserGroupProviderAdminFlow implements Serializable {
                     final ExternalContentStoreProvider provider = registration.getUserProvider();
                     if (provider != null) {
                         final boolean available = provider.isAvailable();
-
                         if (!available) {
                             final String statusMessage = provider.getMountStatusMessage();
                             if (statusMessage != null) {
@@ -328,10 +326,9 @@ public class UserGroupProviderAdminFlow implements Serializable {
                     }
                 }
             } else {
-                if (registration != null) {
-                    registeredProviders.remove(registrationKey);
+                if (registration == null) {
+                    break;
                 }
-                break;
             }
 
             // wait for provider availability / unavailability if it's asynchronous
@@ -342,12 +339,12 @@ public class UserGroupProviderAdminFlow implements Serializable {
             }
         }
     }
-    
+
     private void addNoteForCluster(MessageContext messages) {
         if (!SettingsBean.getInstance().isClusterActivated()) {
             return;
         }
-        
+
         messages.addMessage(new MessageBuilder().info().code("label.userGroupProvider.clusterNote").build());
     }
 }

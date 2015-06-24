@@ -18,7 +18,6 @@
   </bean>
 
   <bean id="ExternalUserGroupServiceImpl" class="org.jahia.modules.external.users.impl.ExternalUserGroupServiceImpl">
-    <property name="jcrStoreService" ref="JCRStoreService"/>
     <property name="jahiaSitesService" ref="JahiaSitesService"/>
     <property name="readOnlyUserProperties" value="${external.users.properties.readonly:j:firstName,j:lastName,j:organization,j:email}"/>
   </bean>

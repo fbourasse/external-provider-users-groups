@@ -71,6 +71,8 @@
  */
 package org.jahia.modules.external.users;
 
+import java.util.Map;
+
 import org.jahia.services.content.decorator.JCRMountPointNode;
 
 /**
@@ -80,7 +82,7 @@ public interface ExternalUserGroupService {
 
     /**
      * Perform registration of a user/group provider with the specified key targeted for the defined site.
-     * 
+     *
      * @param providerKey
      *            the key to register the provider under
      * @param siteKey
@@ -92,7 +94,7 @@ public interface ExternalUserGroupService {
 
     /**
      * Perform registration of a user/group provider with the specified key.
-     * 
+     *
      * @param providerKey
      *            the key to register the provider under
      * @param userGroupProvider
@@ -102,7 +104,7 @@ public interface ExternalUserGroupService {
 
     /**
      * Sets the provider configuration for the specified provider class.
-     * 
+     *
      * @param providerClass
      *            the fully-qualified class name of the provider to set configuratoin for
      * @param userGroupProviderConfig
@@ -112,7 +114,7 @@ public interface ExternalUserGroupService {
 
     /**
      * Unregisters the user/group provider for the specified key.
-     * 
+     *
      * @param providerKey
      *            the key of the provider to be unregistered
      */
@@ -126,4 +128,20 @@ public interface ExternalUserGroupService {
      * @param message
      */
     void setMountStatus(String providerKey, JCRMountPointNode.MountStatus status, String message);
+
+    /**
+     * @return the map of currently registered providers by provider key
+     */
+    Map<String, UserGroupProviderRegistration> getRegisteredProviders();
+
+    /**
+     * @return the map of provider configurations by provider class name
+     */
+    Map<String, UserGroupProviderConfiguration> getProviderConfigurations();
+
+    /**
+     * Initialize site for pending providers
+     * @param siteKey
+     */
+    void initSiteForPendingProviders(String siteKey);
 }

@@ -71,23 +71,23 @@
  */
 package org.jahia.modules.external.users.rules;
 
-import org.jahia.modules.external.users.impl.ExternalUserGroupServiceImpl;
+import org.jahia.modules.external.users.ExternalUserGroupService;
 import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.rules.AddedNodeFact;
 import org.jahia.services.sites.JahiaSite;
 
 public class ExternalUserGroupRuleService {
 
-    private ExternalUserGroupServiceImpl externalUserGroupService;
+    private ExternalUserGroupService externalUserGroupService;
 
     public void checkUserProvidersWaitingForSite(AddedNodeFact nodeFact) {
         JCRNodeWrapper node = nodeFact.getNode();
         if (node instanceof JahiaSite) {
-            externalUserGroupService.checkUserProvidersWaitingForSite(((JahiaSite) node).getSiteKey());
+            externalUserGroupService.initSiteForPendingProviders(((JahiaSite) node).getSiteKey());
         }
     }
 
-    public void setExternalUserGroupService(ExternalUserGroupServiceImpl externalUserGroupService) {
+    public void setExternalUserGroupService(ExternalUserGroupService externalUserGroupService) {
         this.externalUserGroupService = externalUserGroupService;
     }
 }
