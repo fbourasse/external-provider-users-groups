@@ -84,7 +84,7 @@ import java.util.Properties;
 final class SearchCriteriaHelper {
 
     /**
-     * Get String/String principal search criteria from search query constraint
+     * Populate String/String principal search criteria from search query constraint
      *
      * @param constraint
      * @param searchCriteria
@@ -92,13 +92,15 @@ final class SearchCriteriaHelper {
      * @return true if the query contains OR constraints
      * @throws RepositoryException
      */
-    protected static boolean getCriteriaFromConstraints(Constraint constraint, Properties searchCriteria, String principalNameProperty) throws RepositoryException {
+    static boolean fillCriteriaFromConstraint(Constraint constraint, Properties searchCriteria, String principalNameProperty) throws RepositoryException {
         if (constraint == null) {
             searchCriteria.put("*", "*");
             return false;
         } else if (constraint instanceof And) {
-            return getCriteriaFromConstraints(((And) constraint).getConstraint1(), searchCriteria, principalNameProperty) ||
-                    getCriteriaFromConstraints(((And) constraint).getConstraint2(), searchCriteria, principalNameProperty);
+        	And andConstraint = (And) constraint;
+        	boolean constraint1IsOr = fillCriteriaFromConstraint(andConstraint.getConstraint1(), searchCriteria, principalNameProperty);
+        	boolean constraint2IsOr = fillCriteriaFromConstraint(andConstraint.getConstraint2(), searchCriteria, principalNameProperty);
+        	return (constraint1IsOr || constraint2IsOr);
         } else if (constraint instanceof Or) {
             Constraint constraint1 = ((Or) constraint).getConstraint1();
             Constraint constraint2 = ((Or) constraint).getConstraint2();
@@ -113,8 +115,8 @@ final class SearchCriteriaHelper {
                 searchCriteria.put("*", getLikeComparisonValue(((Literal) ((Comparison) constraint2).getOperand2()).getLiteralValue().getString()));
                 return false;
             } else {
-                getCriteriaFromConstraints(constraint1, searchCriteria, principalNameProperty);
-                getCriteriaFromConstraints(constraint2, searchCriteria, principalNameProperty);
+                fillCriteriaFromConstraint(constraint1, searchCriteria, principalNameProperty);
+                fillCriteriaFromConstraint(constraint2, searchCriteria, principalNameProperty);
                 return true;
             }
         } else if (constraint instanceof Comparison) {
