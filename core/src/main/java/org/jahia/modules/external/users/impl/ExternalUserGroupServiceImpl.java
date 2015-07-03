@@ -88,9 +88,11 @@ import org.jahia.services.content.JCRTemplate;
 import org.jahia.services.content.decorator.JCRMountPointNode;
 import org.jahia.services.sites.JahiaSite;
 import org.jahia.services.sites.JahiaSitesService;
+import org.jahia.services.templates.JahiaModulesBeanPostProcessor;
 import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
 
 import javax.jcr.RepositoryException;
 
@@ -105,7 +107,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 /**
  * Implementation of the external user/group service.
  */
-public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
+public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, JahiaModulesBeanPostProcessor {
 
     private static final List<String> EXTENDABLE_TYPES = Arrays.asList("nt:base");
     private static final List<String> OVERRIDABLE_ITEMS = Arrays.asList("jnt:user.*", "jnt:usersFolder.*", "mix:lastModified.*", "jmix:lastPublished.*");
@@ -312,5 +314,30 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
     public void setJahiaSitesService(JahiaSitesService jahiaSitesService) {
         this.jahiaSitesService = jahiaSitesService;
+    }
+
+    @Override
+    public void postProcessBeforeDestruction(Object o, String s) throws BeansException {
+        if (o instanceof UserGroupProviderConfiguration) {
+            String key = null;
+            for (Map.Entry<String, UserGroupProviderConfiguration> entry : providerConfigurations.entrySet()) {
+                if (entry.getValue() == o) {
+                    key = entry.getKey();
+                }
+            }
+            if (key != null) {
+                providerConfigurations.remove(key);
+            }
+        }
+    }
+
+    @Override
+    public Object postProcessBeforeInitialization(Object o, String s) throws BeansException {
+        return o;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object o, String s) throws BeansException {
+        return o;
     }
 }
