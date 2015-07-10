@@ -80,7 +80,7 @@ public class ExternalUserGroupRuleService {
 
     private ExternalUserGroupService externalUserGroupService;
 
-    public void checkUserProvidersWaitingForSite(AddedNodeFact nodeFact) {
+    public void initSiteForPendingProviders(AddedNodeFact nodeFact) {
         JCRNodeWrapper node = nodeFact.getNode();
         if (node instanceof JahiaSite) {
             externalUserGroupService.initSiteForPendingProviders(((JahiaSite) node).getSiteKey());

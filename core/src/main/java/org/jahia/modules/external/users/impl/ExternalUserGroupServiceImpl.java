@@ -72,7 +72,6 @@
 package org.jahia.modules.external.users.impl;
 
 import org.apache.commons.lang.StringUtils;
-import org.jahia.exceptions.JahiaException;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.users.ExternalUserGroupService;
@@ -86,8 +85,6 @@ import org.jahia.services.content.JCRSessionWrapper;
 import org.jahia.services.content.JCRStoreProvider;
 import org.jahia.services.content.JCRTemplate;
 import org.jahia.services.content.decorator.JCRMountPointNode;
-import org.jahia.services.sites.JahiaSite;
-import org.jahia.services.sites.JahiaSitesService;
 import org.jahia.services.templates.JahiaModulesBeanPostProcessor;
 import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
@@ -116,10 +113,13 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, J
     private static final String GROUPS_FOLDER_NAME = "groups";
     private static final Logger logger = LoggerFactory.getLogger(ExternalUserGroupServiceImpl.class);
 
-    private JahiaSitesService jahiaSitesService;
     private String readOnlyUserProperties;
+
     private Map<String, UserGroupProviderRegistration> registeredProviders = new ConcurrentSkipListMap<String, UserGroupProviderRegistration>();
+    private Map<String, UserGroupProviderRegistration> registeredProvidersUnmodifiable = Collections.unmodifiableMap(registeredProviders);
+
     private Map<String, UserGroupProviderConfiguration> providerConfigurations = new ConcurrentHashMap<String, UserGroupProviderConfiguration>();
+    private Map<String, UserGroupProviderConfiguration> providerConfigurationsUnmodifiable = Collections.unmodifiableMap(providerConfigurations);
 
     @Override
     public void register(String providerKey, final UserGroupProvider userGroupProvider) {
@@ -249,18 +249,10 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, J
     public void initSiteForPendingProviders(String newSiteKey) {
         for (Map.Entry<String, UserGroupProviderRegistration> entry : registeredProviders.entrySet()) {
             String siteKey = entry.getValue().getSiteKey();
-            if (siteKey == null || !siteKey.equals(newSiteKey)) {
+            if (!newSiteKey.equals(siteKey)) {
                 continue;
             }
-            JahiaSite targetSite = null;
-            try {
-                targetSite = jahiaSitesService.getSiteByKey(siteKey);
-            } catch (JahiaException e) {
-                logger.debug("Cannot get site " + siteKey, e);
-            }
-            if (targetSite != null) {
-                createMissingStructure(siteKey, entry.getValue().getGroupProvider() != null);
-            }
+            createMissingStructure(newSiteKey, entry.getValue().getGroupProvider() != null);
         }
     }
 
@@ -300,20 +292,16 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, J
 
     @Override
     public Map<String, UserGroupProviderConfiguration> getProviderConfigurations() {
-        return Collections.unmodifiableMap(providerConfigurations);
+        return providerConfigurationsUnmodifiable;
     }
 
     @Override
     public Map<String, UserGroupProviderRegistration> getRegisteredProviders() {
-        return Collections.unmodifiableMap(registeredProviders);
+        return registeredProvidersUnmodifiable;
     }
 
     public void setReadOnlyUserProperties(String readOnlyUserProperties) {
         this.readOnlyUserProperties = readOnlyUserProperties;
-    }
-
-    public void setJahiaSitesService(JahiaSitesService jahiaSitesService) {
-        this.jahiaSitesService = jahiaSitesService;
     }
 
     @Override
