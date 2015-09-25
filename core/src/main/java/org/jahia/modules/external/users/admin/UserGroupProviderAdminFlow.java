@@ -152,8 +152,15 @@ public class UserGroupProviderAdminFlow implements Serializable {
     public void deleteProvider(String providerKey, String providerClass, MutableAttributeMap<Object> flashScope, MessageContext messages) throws Exception {
         Map<String, UserGroupProviderConfiguration> configurations = externalUserGroupService.getProviderConfigurations();
         configurations.get(providerClass).delete(providerKey, flashScope.asMap());
+
+        // don't forget to remove group provider from checker!
+        jcrStoreService.getProviderChecker().remove(providerKey + ".groups");
+
+        // deal with associated user provider if any
         providerKey += ".users";
         wait(providerKey, false, messages);
+        jcrStoreService.getProviderChecker().remove(providerKey);
+
         addNoteForCluster(messages);
     }
 
