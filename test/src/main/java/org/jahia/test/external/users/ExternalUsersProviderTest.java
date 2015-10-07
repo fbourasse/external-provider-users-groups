@@ -129,7 +129,18 @@ public class ExternalUsersProviderTest extends JahiaTestCase {
         assertEquals("tutu should have titi as member", Sets.newHashSet(titi), new HashSet<JCRNodeWrapper>(tutu.getMembers()));
         assertEquals("tyty should have tete and titi as members", Sets.newHashSet(tete, titi), new HashSet<JCRNodeWrapper>(tyty.getMembers()));
 
-        assertEquals("titi should be a member of tutu, toto, tyty, users and guests", Sets.newHashSet(tutu.getPath(), toto.getPath(), tyty.getPath(), "/groups/users", "/groups/guest"), new HashSet<String>(jahiaGroupManagerService.getMembershipByPath(titi.getPath())));
+        Set<String> membership = new HashSet<String>(jahiaGroupManagerService.getMembershipByPath(titi.getPath()));
+        Set<String> expectedMembership = Sets.newHashSet(tutu.getPath(), toto.getPath(), tyty.getPath(), "/groups/users", "/groups/guest");
+        boolean expectedMembershipReturned = membership.containsAll(expectedMembership);
+        membership.removeAll(expectedMembership);
+        for (String remainingMembership : membership) {
+            if (!remainingMembership.endsWith("site-users")) {
+                expectedMembershipReturned = false;
+                break;
+            }
+        }
+        
+        assertTrue("titi should be a member of tutu, toto, tyty, users and guests", expectedMembershipReturned);
     }
 
     @Test
@@ -149,7 +160,16 @@ public class ExternalUsersProviderTest extends JahiaTestCase {
         Properties properties = new Properties();
         properties.put("username", "t*");
         Set<JCRUserNode> users = jahiaUserManagerService.searchUsers(properties);
-        assertEquals("'username=t*' search should return tata, tete and titi", Sets.newHashSet(tata, tete, titi), users);
+        Set<JCRUserNode> expectedUsers = Sets.<JCRUserNode>newHashSet(tata, tete, titi);
+        boolean expectedUsersReturned = users.containsAll(expectedUsers);
+        users.removeAll(expectedUsers);
+        for (JCRUserNode remainingUser : users) {
+            if (!remainingUser.getName().startsWith("t")) {
+                expectedUsersReturned = false;
+                break;
+            }
+        }
+        assertTrue("'username=t*' search should return tata, tete and titi and no other users not having a usernmae with t", expectedUsersReturned);
 
         JCRGroupNode toto = jahiaGroupManagerService.lookupGroup(null, "toto");
         JCRGroupNode tutu = jahiaGroupManagerService.lookupGroup(null, "tutu");
