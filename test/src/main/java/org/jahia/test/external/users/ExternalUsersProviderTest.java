@@ -163,13 +163,14 @@ public class ExternalUsersProviderTest extends JahiaTestCase {
         Set<JCRUserNode> expectedUsers = Sets.<JCRUserNode>newHashSet(tata, tete, titi);
         boolean expectedUsersReturned = users.containsAll(expectedUsers);
         users.removeAll(expectedUsers);
+        Set<JCRUserNode> wrongUsers = new HashSet<JCRUserNode>();
         for (JCRUserNode remainingUser : users) {
             if (!remainingUser.getName().startsWith("t")) {
                 expectedUsersReturned = false;
-                break;
+                wrongUsers.add(remainingUser);
             }
         }
-        assertTrue("'username=t*' search should return tata, tete and titi and no other users not having a usernmae with t", expectedUsersReturned);
+        assertTrue("'username=t*' search should return tata, tete and titi and no other users not having a usernmae with t: " + wrongUsers.toString(), expectedUsersReturned);
 
         JCRGroupNode toto = jahiaGroupManagerService.lookupGroup(null, "toto");
         JCRGroupNode tutu = jahiaGroupManagerService.lookupGroup(null, "tutu");
