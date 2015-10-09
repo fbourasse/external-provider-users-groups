@@ -165,7 +165,7 @@ public class ExternalUsersProviderTest extends JahiaTestCase {
         users.removeAll(expectedUsers);
         Set<JCRUserNode> wrongUsers = new HashSet<JCRUserNode>();
         for (JCRUserNode remainingUser : users) {
-            if (!remainingUser.getName().startsWith("t")) {
+            if (!remainingUser.getName().toLowerCase().startsWith("t")) {
                 expectedUsersReturned = false;
                 wrongUsers.add(remainingUser);
             }
