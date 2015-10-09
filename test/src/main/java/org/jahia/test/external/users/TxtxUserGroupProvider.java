@@ -147,6 +147,9 @@ public class TxtxUserGroupProvider extends BaseUserGroupProvider {
 
     @Override
     public List<String> searchUsers(Properties searchCriterias, long offset, long limit) {
+        if (searchCriterias.get("cookieauth") != null) {
+            return Collections.emptyList();
+        }
         String filter = (String) searchCriterias.get("username");
         if (filter == null) {
             filter = (String) searchCriterias.get("*");
