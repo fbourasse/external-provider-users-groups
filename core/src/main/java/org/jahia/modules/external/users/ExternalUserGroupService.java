@@ -71,6 +71,7 @@
  */
 package org.jahia.modules.external.users;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import org.jahia.services.content.decorator.JCRMountPointNode;
@@ -78,7 +79,7 @@ import org.jahia.services.content.decorator.JCRMountPointNode;
 /**
  * Service to register and unregister a UserGroupProvider
  */
-public interface ExternalUserGroupService {
+public interface ExternalUserGroupService extends Serializable{
 
     /**
      * Perform registration of a user/group provider with the specified key targeted for the defined site.
