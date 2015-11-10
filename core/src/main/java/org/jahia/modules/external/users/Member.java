@@ -73,14 +73,10 @@ package org.jahia.modules.external.users;
 
 import org.apache.commons.lang.StringUtils;
 
-import java.io.Serializable;
-
 /**
  * Class used to describe a member with a name and a type (user or group)
  */
-public class Member implements Serializable{
-
-    private static final long serialVersionUID = 1L;
+public class Member {
 
     /**
      * Supported group member types. 
