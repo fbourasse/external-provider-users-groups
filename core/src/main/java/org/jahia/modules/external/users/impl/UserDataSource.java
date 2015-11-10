@@ -76,6 +76,8 @@ import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalData;
 import org.jahia.modules.external.ExternalDataSource;
 import org.jahia.modules.external.ExternalQuery;
+import org.jahia.modules.external.acl.ExternalDataAce;
+import org.jahia.modules.external.acl.ExternalDataAcl;
 import org.jahia.modules.external.users.UserGroupProvider;
 import org.jahia.modules.external.users.UserNotFoundException;
 import org.jahia.services.content.decorator.JCRUserNode;
@@ -91,34 +93,10 @@ import javax.jcr.RepositoryException;
 
 import java.util.*;
 
-import static javax.jcr.security.Privilege.*;
-import static org.jahia.api.Constants.EDIT_WORKSPACE;
-import static org.jahia.api.Constants.LIVE_WORKSPACE;
-
 /**
  * Data source implementation for retrieving users. 
  */
 public class UserDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable, ExternalDataSource.CanCheckAvailability {
-
-    private static final String[] READ_PROVILEGES = new String[] {JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE};
-    
-    private static final String[] USER_FOLDER_PRIVILEGES = new String[] {
-        JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE,
-        JCR_WRITE + "_" + EDIT_WORKSPACE, JCR_WRITE + "_" + LIVE_WORKSPACE,
-        JCR_ADD_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_ADD_CHILD_NODES + "_" + LIVE_WORKSPACE,
-        JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_REMOVE_CHILD_NODES + "_" + LIVE_WORKSPACE,
-        "actions"
-    };
-    
-    private static final String[] USER_SUBFOLDER_PROVILEGES = new String[] {
-            JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE,
-            JCR_WRITE + "_" + EDIT_WORKSPACE, JCR_WRITE + "_" + LIVE_WORKSPACE,
-            JCR_REMOVE_NODE + "_" + EDIT_WORKSPACE, JCR_REMOVE_NODE + "_" + LIVE_WORKSPACE,
-            JCR_ADD_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_ADD_CHILD_NODES + "_" + LIVE_WORKSPACE,
-            JCR_REMOVE_CHILD_NODES + "_" + EDIT_WORKSPACE, JCR_REMOVE_CHILD_NODES + "_" + LIVE_WORKSPACE,
-            "actions"
-    };
-    
     private static Logger logger = LoggerFactory.getLogger(UserDataSource.class);
     
     public static final HashSet<String> SUPPORTED_NODE_TYPES = new HashSet<String>(Arrays.asList("jnt:externalUser", "jnt:usersFolder"));
@@ -240,7 +218,9 @@ public class UserDataSource implements ExternalDataSource, ExternalDataSource.Se
         }
         properties.put("j:external", new String[]{"true"});
         properties.put("j:externalSource", new String[]{StringUtils.removeEnd(contentStoreProvider.getKey(), ".users")});
-        return new ExternalData(path, path, "jnt:externalUser", properties);
+        ExternalData userExtrernalData = new ExternalData(path, path, "jnt:externalUser", properties);
+        userExtrernalData.setAcl(new ExternalDataAcl(Collections.singleton(new ExternalDataAce(ExternalDataAce.Type.GRANT, "u:" + user.getUsername(), Collections.singleton("owner")))));
+        return userExtrernalData;
     }
 
     public void setJahiaUserManagerService(JahiaUserManagerService jahiaUserManagerService) {
@@ -265,19 +245,8 @@ public class UserDataSource implements ExternalDataSource, ExternalDataSource.Se
 
     @Override
     public String[] getPrivilegesNames(String username, String path) {
-        if (path.contains("/")) {
-            String[] pathSegments = StringUtils.split(path, '/');
-            JahiaUserSplittingRule userSplittingRule = jahiaUserManagerService.getUserSplittingRule();
-            if (pathSegments.length == userSplittingRule.getNumberOfSegments() + 1 // number of split folders + user name
-                    && username.equals(pathSegments[userSplittingRule.getNumberOfSegments()])) {
-                return USER_FOLDER_PRIVILEGES;
-            }
-            if (pathSegments.length > userSplittingRule.getNumberOfSegments() + 1 // user subfolder
-                    && username.equals(pathSegments[userSplittingRule.getNumberOfSegments()])) {
-                return USER_SUBFOLDER_PROVILEGES;
-            }
-        }
-        return READ_PROVILEGES;
+        // not used anymore since BACKLOG-5671, Acl are handle on ExternalDataDirectly
+        return null;
     }
 
     @Override
