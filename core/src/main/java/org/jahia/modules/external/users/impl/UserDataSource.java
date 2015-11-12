@@ -242,7 +242,12 @@ public class UserDataSource implements ExternalDataSource, ExternalDataSource.Se
         properties.put("j:external", new String[]{"true"});
         properties.put("j:externalSource", new String[]{StringUtils.removeEnd(contentStoreProvider.getKey(), ".users")});
         ExternalData userExtrernalData = new ExternalData(path, path, "jnt:externalUser", properties);
-        userExtrernalData.setAcl(new ExternalDataAcl(Collections.singleton(new ExternalDataAce(ExternalDataAce.Type.GRANT, "u:" + user.getUsername(), Collections.singleton("owner")))));
+
+        // acl
+        ExternalDataAcl userNodeAcl = new ExternalDataAcl();
+        userNodeAcl.addAce(ExternalDataAce.Type.GRANT, "u:" + user.getUsername(), Collections.singleton("owner"));
+
+        userExtrernalData.setExternalDataAcl(userNodeAcl);
         return userExtrernalData;
     }
 
