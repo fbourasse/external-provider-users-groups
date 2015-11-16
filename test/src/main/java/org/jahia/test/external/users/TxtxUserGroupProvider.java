@@ -86,7 +86,7 @@ import java.util.regex.Pattern;
 
 public class TxtxUserGroupProvider extends BaseUserGroupProvider {
 
-    private List<String> users = Arrays.asList("tata", "tete", "titi");
+    private List<String> users = Arrays.asList("tata", "tete", "titi", "yaya");
 
     private List<String> groups = Arrays.asList("toto", "tutu", "tyty");
 

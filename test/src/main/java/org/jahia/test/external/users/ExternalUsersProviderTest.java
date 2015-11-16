@@ -73,25 +73,27 @@ package org.jahia.test.external.users;
 
 import com.google.common.collect.Sets;
 
+import org.jahia.services.content.JCRCallback;
 import org.jahia.services.content.JCRNodeWrapper;
+import org.jahia.services.content.JCRSessionWrapper;
+import org.jahia.services.content.JCRTemplate;
 import org.jahia.services.content.decorator.JCRGroupNode;
 import org.jahia.services.content.decorator.JCRUserNode;
 import org.jahia.services.usermanager.JahiaGroupManagerService;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.test.JahiaTestCase;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Integration tests for the external users provider implementation.
@@ -194,5 +196,75 @@ public class ExternalUsersProviderTest extends JahiaTestCase {
             threwException = true;
         }
         assertTrue("Setting a read-only property shouldn't be possible", threwException);
+    }
+
+    @Test
+    public void testAcls() throws RepositoryException {
+        final String folderPath = JCRTemplate.getInstance().doExecute("tata", null, "default", null, new JCRCallback<String>() {
+            @Override
+            public String doInJCR(JCRSessionWrapper jcrSessionWrapper) throws RepositoryException {
+                JCRUserNode tata = jahiaUserManagerService.lookupUser("tata", jcrSessionWrapper);
+                assertTrue(checkPermission(jcrSessionWrapper, tata.getPath(), "jcr:write"));
+
+                // check that is not possible to modify user acls (because of AccessControllable impl)
+                boolean threwException = false;
+                try {
+                    tata.grantRoles("u:tete", Collections.singleton("owner"));
+                } catch (UnsupportedRepositoryOperationException e) {
+                    threwException = true;
+                }
+                assertTrue("Changing acl on external node that implement AccessControlable shouldn't be possible", threwException);
+
+                JCRNodeWrapper folder = tata.addNode("tata_folder", "jnt:folder");
+                folder.grantRoles("u:titi", Collections.singleton("reader"));
+                folder.grantRoles("u:tete", Collections.singleton("editor"));
+
+                JCRNodeWrapper folder2 = folder.addNode("tata_folder2", "jnt:folder");
+                folder2.setAclInheritanceBreak(true);
+                folder2.grantRoles("u:yaya", Collections.singleton("owner"));
+
+                jcrSessionWrapper.save();
+                assertFalse(checkPermission(jcrSessionWrapper, folder.getPath() + "/tata_folder2" , "jcr:write"));
+                return folder.getPath();
+            }
+        });
+
+        JCRTemplate.getInstance().doExecute("titi", null, "default", null, new JCRCallback<Object>() {
+            @Override
+            public Object doInJCR(JCRSessionWrapper jcrSessionWrapper) throws RepositoryException {
+                assertTrue(checkPermission(jcrSessionWrapper, folderPath, "jcr:read_live"));
+                assertFalse(checkPermission(jcrSessionWrapper, folderPath, "jcr:write"));
+                assertFalse(checkPermission(jcrSessionWrapper, folderPath + "/tata_folder2", "jcr:write"));
+                return null;
+            }
+        });
+
+        JCRTemplate.getInstance().doExecute("yaya", null, "default", null, new JCRCallback<Object>() {
+            @Override
+            public Object doInJCR(JCRSessionWrapper jcrSessionWrapper) throws RepositoryException {
+                assertFalse(checkPermission(jcrSessionWrapper, folderPath, "jcr:read"));
+                assertTrue(checkPermission(jcrSessionWrapper, folderPath + "/tata_folder2", "jcr:write"));
+                return null;
+            }
+        });
+
+        JCRTemplate.getInstance().doExecute("tete", null, "default", null, new JCRCallback<Object>() {
+            @Override
+            public Object doInJCR(JCRSessionWrapper jcrSessionWrapper) throws RepositoryException {
+                assertTrue(checkPermission(jcrSessionWrapper, folderPath, "jcr:write"));
+                assertFalse(checkPermission(jcrSessionWrapper, folderPath + "/tata_folder2", "jcr:write"));
+                jcrSessionWrapper.getNode(folderPath).remove();
+                jcrSessionWrapper.save();
+                return null;
+            }
+        });
+    }
+
+    public Boolean checkPermission(JCRSessionWrapper session, String path, String permission) throws RepositoryException {
+        try {
+            return session.getNode(path).hasPermission(permission);
+        } catch (PathNotFoundException e) {
+            return false;
+        }
     }
 }
