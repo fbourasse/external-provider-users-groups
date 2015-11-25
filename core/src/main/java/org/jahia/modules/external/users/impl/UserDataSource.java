@@ -90,13 +90,12 @@ import org.slf4j.LoggerFactory;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
-
 import java.util.*;
 
 /**
  * Data source implementation for retrieving users. 
  */
-public class UserDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable, ExternalDataSource.CanCheckAvailability {
+    public class UserDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable, ExternalDataSource.CanCheckAvailability {
     private static Logger logger = LoggerFactory.getLogger(UserDataSource.class);
     
     public static final HashSet<String> SUPPORTED_NODE_TYPES = new HashSet<String>(Arrays.asList("jnt:externalUser", "jnt:usersFolder"));
@@ -246,12 +245,6 @@ public class UserDataSource implements ExternalDataSource, ExternalDataSource.Se
 
     public void setContentStoreProvider(ExternalContentStoreProvider contentStoreProvider) {
         this.contentStoreProvider = contentStoreProvider;
-    }
-
-    @Override
-    public String[] getPrivilegesNames(String username, String path) {
-        //deprecated, acl are now handle directly on external data
-        return null;
     }
 
     @Override
