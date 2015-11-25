@@ -72,22 +72,19 @@
 package org.jahia.test.external.users;
 
 import com.google.common.collect.Sets;
-
-import org.jahia.services.content.JCRCallback;
-import org.jahia.services.content.JCRNodeWrapper;
-import org.jahia.services.content.JCRSessionWrapper;
-import org.jahia.services.content.JCRTemplate;
+import org.jahia.services.content.*;
 import org.jahia.services.content.decorator.JCRGroupNode;
 import org.jahia.services.content.decorator.JCRUserNode;
 import org.jahia.services.usermanager.JahiaGroupManagerService;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.test.JahiaTestCase;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
@@ -202,11 +199,20 @@ public class ExternalUsersProviderTest extends JahiaTestCase {
 
     @Test
     public void testAcls() throws RepositoryException {
-        final String folderPath = JCRTemplate.getInstance().doExecuteWithSystemSession(new JCRCallback<String>() {
+        JCRTemplate.getInstance().doExecuteWithSystemSession(
+                new JCRCallback<String>() {
+                    @Override
+                    public String doInJCR(JCRSessionWrapper jcrSessionWrapper) throws RepositoryException {
+                        // users need to be priviliged
+                        jcrSessionWrapper.getNode("/sites/systemsite").grantRoles("u:tata", Collections.singleton("editor-in-chief"));
+                        jcrSessionWrapper.save();
+                        return null;
+                    }
+                });
+        final String folderPath = JCRTemplate.getInstance().doExecute("tata", null, "default", null, new JCRCallback<String>() {
             @Override
             public String doInJCR(JCRSessionWrapper jcrSessionWrapper) throws RepositoryException {
-                // users need to be priviliged
-                jcrSessionWrapper.getNode("/sites/systemsite").grantRoles("u:tata", Collections.singleton("editor"));
+
                 jcrSessionWrapper.getNode("/sites/systemsite").grantRoles("u:titi", Collections.singleton("editor"));
                 jcrSessionWrapper.getNode("/sites/systemsite").grantRoles("u:tete", Collections.singleton("editor"));
                 jcrSessionWrapper.getNode("/sites/systemsite").grantRoles("u:yaya", Collections.singleton("editor"));
@@ -217,13 +223,26 @@ public class ExternalUsersProviderTest extends JahiaTestCase {
                 folder.grantRoles("u:titi", Collections.singleton("reader"));
                 folder.grantRoles("u:tete", Collections.singleton("editor"));
 
-                JCRNodeWrapper folder2 = folder.addNode("tata_folder2", "jnt:folder");
-                folder2.setAclInheritanceBreak(true);
-                folder2.grantRoles("u:yaya", Collections.singleton("owner"));
                 jcrSessionWrapper.save();
                 return folder.getPath();
             }
         });
+
+        JCRTemplate.getInstance().doExecuteWithSystemSession(
+                new JCRCallback<String>() {
+                    @Override
+                    public String doInJCR(JCRSessionWrapper jcrSessionWrapper) throws RepositoryException {
+                        // users need to be priviliged
+                        JCRNodeWrapper folder2 = jcrSessionWrapper.getNode(folderPath).addNode("tata_folder2", "jnt:folder");
+                        folder2.setAclInheritanceBreak(true);
+                        folder2.grantRoles("u:yaya", Collections.singleton("owner"));
+                        jcrSessionWrapper.save();
+                        return null;
+                    }
+                });
+
+        // triggered events put users in site privileged group
+        assertTrue(jahiaGroupManagerService.isMember("tata", JahiaGroupManagerService.SITE_PRIVILEGED_GROUPNAME, "systemsite"));
 
         // tata is owner, should be able to jcr:write on first folder, but not second one because inheritance is broken
         JCRTemplate.getInstance().doExecute("tata", null, "default", null, new JCRCallback<String>() {
@@ -285,19 +304,14 @@ public class ExternalUsersProviderTest extends JahiaTestCase {
             }
         });
 
+        // Triggered event remove user from privileged group
+        // todo: BACKLOG-5678 to fix the following failing test
+        assertFalse(jahiaGroupManagerService.isMember("tata", JahiaGroupManagerService.SITE_PRIVILEGED_GROUPNAME, "systemsite"));
+
         JCRTemplate.getInstance().doExecute("tete", null, "default", null, new JCRCallback<Object>() {
             @Override
             public Object doInJCR(JCRSessionWrapper jcrSessionWrapper) throws RepositoryException {
                 assertFalse(checkPermission(jcrSessionWrapper, folderPath, "jcr:write"));
-                return null;
-            }
-        });
-
-        JCRTemplate.getInstance().doExecuteWithSystemSession(new JCRCallback<String>() {
-            @Override
-            public String doInJCR(JCRSessionWrapper jcrSessionWrapper) throws RepositoryException {
-                jcrSessionWrapper.getNode(folderPath).remove();
-                jcrSessionWrapper.save();
                 return null;
             }
         });
@@ -310,4 +324,22 @@ public class ExternalUsersProviderTest extends JahiaTestCase {
             return false;
         }
     }
+
+    @After
+    public void tearDown() throws Exception {
+        JCRTemplate.getInstance().doExecuteWithSystemSession(
+                new JCRCallback<String>() {
+                    @Override
+                    public String doInJCR(JCRSessionWrapper jcrSessionWrapper) throws RepositoryException {
+                        if (jahiaUserManagerService.lookupUser("tata", jcrSessionWrapper).hasNode("tata_folder")) {
+                            jahiaUserManagerService.lookupUser("tata", jcrSessionWrapper).getNode("tata_folder").remove();
+                            jcrSessionWrapper.save();
+                        }
+                        return null;
+                    }
+                });
+        JCRSessionFactory.getInstance().closeAllSessions();
+    }
+
+
 }
