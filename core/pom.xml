@@ -82,7 +82,7 @@
   <artifactId>external-provider-users-groups</artifactId>
   <packaging>bundle</packaging>
   <name>Jahia External Provider Users and Groups</name>
-  <description>This is the custom module (Jahia External Provider Users and Groups) for running on a Digital Factory server.</description>
+  <description>This is the custom module (Jahia External Provider Users and Groups) for running on a Digital Experience Manager server.</description>
   <scm>
     <connection>scm:git:git@github.com:Jahia/external-provider-users-groups.git</connection>
     <developerConnection>scm:git:git@github.com:Jahia/external-provider-users-groups.git</developerConnection>
