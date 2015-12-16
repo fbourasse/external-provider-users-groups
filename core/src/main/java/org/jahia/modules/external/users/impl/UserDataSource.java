@@ -201,6 +201,7 @@ import java.util.*;
 
         // acl
         ExternalDataAcl userNodeAcl = new ExternalDataAcl();
+        userNodeAcl.setInherit(false);
         userNodeAcl.addAce(ExternalDataAce.Type.GRANT, "u:" + user.getUsername(), Collections.singleton("owner"));
 
         userExtrernalData.setExternalDataAcl(userNodeAcl);
