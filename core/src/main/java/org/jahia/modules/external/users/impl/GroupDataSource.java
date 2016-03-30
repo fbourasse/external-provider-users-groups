@@ -51,7 +51,9 @@ import org.jahia.modules.external.ExternalQuery;
 import org.jahia.modules.external.users.GroupNotFoundException;
 import org.jahia.modules.external.users.Member;
 import org.jahia.modules.external.users.UserGroupProvider;
+import org.jahia.registries.ServicesRegistry;
 import org.jahia.services.usermanager.JahiaGroup;
+import org.jahia.services.usermanager.JahiaGroupManagerService;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +67,7 @@ import java.util.*;
 /**
  * Data source implementation for retrieving groups.
  */
-public class GroupDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.Referenceable, ExternalDataSource.CanCheckAvailability {
+public class GroupDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.Referenceable, ExternalDataSource.CanCheckAvailability, ExternalDataSource.Initializable {
 
     private static final Logger logger = LoggerFactory.getLogger(GroupDataSource.class);
 
@@ -80,10 +82,21 @@ public class GroupDataSource implements ExternalDataSource, ExternalDataSource.S
     private ExternalContentStoreProvider contentStoreProvider;
 
     private JahiaUserManagerService jahiaUserManagerService;
+    private JahiaGroupManagerService jahiaGroupManagerService;
 
     private UserGroupProvider userGroupProvider;
 
     private UserDataSource userDataSource;
+
+    @Override
+    public void start() {
+        jahiaGroupManagerService.clearNonExistingGroupsCache();
+    }
+
+    @Override
+    public void stop() {
+
+    }
 
     @Override
     public List<String> getChildren(String path) throws RepositoryException {
@@ -314,6 +327,10 @@ public class GroupDataSource implements ExternalDataSource, ExternalDataSource.S
 
     public void setJahiaUserManagerService(JahiaUserManagerService jahiaUserManagerService) {
         this.jahiaUserManagerService = jahiaUserManagerService;
+    }
+
+    public void setJahiaGroupManagerService(JahiaGroupManagerService jahiaGroupManagerService) {
+        this.jahiaGroupManagerService = jahiaGroupManagerService;
     }
 
     public void setUserGroupProvider(UserGroupProvider userGroupProvider) {

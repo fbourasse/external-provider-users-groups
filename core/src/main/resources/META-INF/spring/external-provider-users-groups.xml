@@ -15,6 +15,7 @@
   <bean id="GroupDataSourcePrototype" class="org.jahia.modules.external.users.impl.GroupDataSource"
         scope="prototype">
     <property name="jahiaUserManagerService" ref="JahiaUserManagerService"/>
+    <property name="jahiaGroupManagerService" ref="JahiaGroupManagerService"/>
   </bean>
 
   <bean id="ExternalUserGroupServiceImpl" class="org.jahia.modules.external.users.impl.ExternalUserGroupServiceImpl">

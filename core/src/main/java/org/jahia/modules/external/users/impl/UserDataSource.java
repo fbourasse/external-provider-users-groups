@@ -67,7 +67,7 @@ import java.util.*;
 /**
  * Data source implementation for retrieving users. 
  */
-    public class UserDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable, ExternalDataSource.CanCheckAvailability {
+public class UserDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable, ExternalDataSource.CanCheckAvailability, ExternalDataSource.Initializable {
     private static Logger logger = LoggerFactory.getLogger(UserDataSource.class);
     
     public static final HashSet<String> SUPPORTED_NODE_TYPES = new HashSet<String>(Arrays.asList("jnt:externalUser", "jnt:usersFolder"));
@@ -77,6 +77,21 @@ import java.util.*;
     private UserGroupProvider userGroupProvider;
 
     private ExternalContentStoreProvider contentStoreProvider;
+
+    @Override
+    public void start() {
+        if (userGroupProvider instanceof Initializable) {
+            ((Initializable) userGroupProvider).start();
+        }
+        jahiaUserManagerService.clearNonExistingUsersCache();
+    }
+
+    @Override
+    public void stop() {
+        if (userGroupProvider instanceof Initializable) {
+            ((Initializable) userGroupProvider).stop();
+        }
+    }
 
     @Override
     public List<String> getChildren(String path) throws RepositoryException {
