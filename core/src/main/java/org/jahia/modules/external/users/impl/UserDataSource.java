@@ -70,7 +70,7 @@ import static org.jahia.api.Constants.LIVE_WORKSPACE;
 /**
  * Data source implementation for retrieving users. 
  */
-public class UserDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable, ExternalDataSource.CanCheckAvailability {
+public class UserDataSource implements ExternalDataSource, ExternalDataSource.Searchable, ExternalDataSource.AccessControllable, ExternalDataSource.CanCheckAvailability, ExternalDataSource.Initializable {
 
     private static final String[] READ_PROVILEGES = new String[] {JCR_READ + "_" + EDIT_WORKSPACE, JCR_READ + "_" + LIVE_WORKSPACE};
     
@@ -100,6 +100,21 @@ public class UserDataSource implements ExternalDataSource, ExternalDataSource.Se
     private UserGroupProvider userGroupProvider;
 
     private ExternalContentStoreProvider contentStoreProvider;
+
+    @Override
+    public void start() {
+        if (userGroupProvider instanceof Initializable) {
+            ((Initializable) userGroupProvider).start();
+        }
+        jahiaUserManagerService.clearNonExistingUsersCache();
+    }
+
+    @Override
+    public void stop() {
+        if (userGroupProvider instanceof Initializable) {
+            ((Initializable) userGroupProvider).stop();
+        }
+    }
 
     @Override
     public List<String> getChildren(String path) throws RepositoryException {
