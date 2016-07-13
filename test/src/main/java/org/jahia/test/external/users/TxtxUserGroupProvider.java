@@ -67,6 +67,10 @@ public class TxtxUserGroupProvider extends BaseUserGroupProvider {
         if (users.contains(name)) {
             Properties properties = new Properties();
             properties.put("j:email", "mail@tx.tx");
+            String capitalizedName = StringUtils.capitalize(name);
+            properties.put("j:firstName", capitalizedName);
+            properties.put("j:lastName", "Mc" + capitalizedName);
+            properties.put("j:publicProperties", new String[] { "j:firstName", "j:lastName" });
             return new JahiaUserImpl(name, name, properties, getKey());
         }
         throw new UserNotFoundException("Cannot find user " + name);

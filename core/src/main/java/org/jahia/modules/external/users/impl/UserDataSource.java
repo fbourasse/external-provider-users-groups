@@ -200,7 +200,12 @@ public class UserDataSource implements ExternalDataSource, ExternalDataSource.Se
         Map<String,String[]> properties = new HashMap<String, String[]>();
         Properties userProperties = user.getProperties();
         for (Object key : userProperties.keySet()) {
-            properties.put((String) key, new String[]{(String) userProperties.get(key)});
+            Object value = userProperties.get(key);
+            if (value instanceof String[]) {
+                properties.put((String) key, (String[]) value);
+            } else {
+                properties.put((String) key, new String[]{(String) value});
+            }
         }
         properties.put("j:external", new String[]{"true"});
         properties.put("j:externalSource", new String[]{StringUtils.removeEnd(contentStoreProvider.getKey(), ".users")});
