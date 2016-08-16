@@ -84,10 +84,11 @@ public interface UserGroupProvider {
     /**
      * Returns all the groups containing the specified member
      *
+     * @param searchCriteria search criteria for groups or users
      * @param member a member (user or group)
      * @return a list of group names
      */
-    List<String> getMembership(Member member);
+    List<String> getMembership(Properties searchCriteria, Member member);
 
     /**
      * Find users according to a table of name=value properties. If the left

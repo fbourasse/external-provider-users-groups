@@ -241,10 +241,12 @@ public class GroupDataSource implements ExternalDataSource, ExternalDataSource.S
             List<String> groups = null;
 
             Member member = null;
+            Properties searchCriteria = new Properties();
+            searchCriteria.put("*", "*");
             if (principalId.startsWith("/")) {
                 // already an externalId -> identifier of a group
                 member = new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.GROUP);
-                groups = userGroupProvider.getMembership(member);
+                groups = userGroupProvider.getMembership(searchCriteria, member);
             } else {
                 try {
                     ExternalContentStoreProvider provider = userDataSource.getContentStoreProvider();
@@ -252,7 +254,7 @@ public class GroupDataSource implements ExternalDataSource, ExternalDataSource.S
                         principalId = provider.getExternalProviderInitializerService().getExternalIdentifier(identifier);
                         if (principalId != null && principalId.startsWith("/")) {
                             member = new Member(StringUtils.substringAfterLast(principalId, "/"), Member.MemberType.USER);
-                            groups = userGroupProvider.getMembership(member);
+                            groups = userGroupProvider.getMembership(searchCriteria,member);
                         }
                     }
                 } catch (RepositoryException e) {
