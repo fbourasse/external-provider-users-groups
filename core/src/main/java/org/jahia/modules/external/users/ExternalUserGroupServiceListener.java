@@ -43,70 +43,48 @@
  */
 package org.jahia.modules.external.users;
 
-import org.eclipse.gemini.blueprint.context.BundleContextAware;
-import org.osgi.framework.*;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Base abstract implementation of a user / group provider.
- * 
- * @author Sergiy Shyrkov
+ * OSGI service listener that react on ExternalUserGroupService service,
+ * it's used by the providers that extends the BaseUserGroupProvider
+ *
+ * Automatically unregister and register back providers when service is remove and add again in the OSGI env
  */
-public abstract class BaseUserGroupProvider implements UserGroupProvider, BundleContextAware {
-    private static final Logger logger = LoggerFactory.getLogger(BaseUserGroupProvider.class);
+public class ExternalUserGroupServiceListener implements ServiceListener {
+    private static final Logger logger = LoggerFactory.getLogger(ExternalUserGroupServiceListener.class);
 
-    private ExternalUserGroupService externalUserGroupService;
-    private ExternalUserGroupServiceListener externalUserGroupServiceListener;
+    private BaseUserGroupProvider userGroupProvider;
     private BundleContext bundleContext;
 
-    private String key;
-
-    protected ExternalUserGroupService getExternalUserGroupService() {
-        return externalUserGroupService;
-    }
-
-    protected String getKey() {
-        return key;
-    }
-
-    protected String getSiteKey() {
-        return null;
-    }
-
-    public void register() {
-        externalUserGroupService.register(getKey(), getSiteKey(), this);
-
-        // create listener if null
-        if (externalUserGroupServiceListener == null) {
-            externalUserGroupServiceListener = new ExternalUserGroupServiceListener(this, bundleContext);
-        }
-        // start listener to react on service availability
-        try {
-            bundleContext.addServiceListener(externalUserGroupServiceListener, "(objectclass=" + ExternalUserGroupService.class.getName() + ")");
-        } catch (InvalidSyntaxException e) {
-            logger.error("Error adding service listener for ExternalUserGroupService", e);
-        }
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public void unregister() {
-        externalUserGroupService.unregister(getKey());
-        // remove listener, no need to react on service availability since current provider is unregistered manually
-        if (externalUserGroupServiceListener != null) {
-            bundleContext.removeServiceListener(externalUserGroupServiceListener);
-        }
-    }
-
-    public void setExternalUserGroupService(ExternalUserGroupService externalUserGroupService) {
-        this.externalUserGroupService = externalUserGroupService;
+    public ExternalUserGroupServiceListener(BaseUserGroupProvider userGroupProvider, BundleContext bundleContext) {
+        this.userGroupProvider = userGroupProvider;
+        this.bundleContext = bundleContext;
     }
 
     @Override
-    public void setBundleContext(BundleContext bundleContext) {
-        this.bundleContext = bundleContext;
+    public void serviceChanged(ServiceEvent serviceEvent) {
+        ExternalUserGroupService service;
+        switch (serviceEvent.getType()) {
+            default:
+            case ServiceEvent.UNREGISTERING:
+                logger.info("External user group service is gone, automatically unregister provider: " + userGroupProvider.getKey());
+                service = (ExternalUserGroupService)
+                        bundleContext.getService(serviceEvent.getServiceReference());
+
+                service.unregister(userGroupProvider.getKey());
+                break;
+            case ServiceEvent.REGISTERED:
+                logger.info("External user group service is back, automatically register provider: " + userGroupProvider.getKey());
+                service = (ExternalUserGroupService)
+                        bundleContext.getService(serviceEvent.getServiceReference());
+
+                service.register(userGroupProvider.getKey(), userGroupProvider.getSiteKey(), userGroupProvider);
+                break;
+        }
     }
 }

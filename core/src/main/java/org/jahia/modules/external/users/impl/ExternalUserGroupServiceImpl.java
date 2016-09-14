@@ -58,6 +58,8 @@ import org.jahia.services.content.JCRStoreProvider;
 import org.jahia.services.content.JCRTemplate;
 import org.jahia.services.content.decorator.JCRMountPointNode;
 import org.jahia.services.templates.JahiaModulesBeanPostProcessor;
+import org.jahia.services.usermanager.JahiaGroupManagerService;
+import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,6 +87,9 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, J
     private static final String GROUPS_FOLDER_NAME = "groups";
     private static final Logger logger = LoggerFactory.getLogger(ExternalUserGroupServiceImpl.class);
 
+    private JahiaUserManagerService jahiaUserManagerService;
+    private JahiaGroupManagerService jahiaGroupManagerService;
+
     private String readOnlyUserProperties;
 
     private Map<String, UserGroupProviderRegistration> registeredProviders = new ConcurrentSkipListMap<String, UserGroupProviderRegistration>();
@@ -107,7 +112,8 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, J
         if (!registeredProviders.containsKey(providerKey)) {
             try {
 
-                UserDataSource userDataSource = (UserDataSource) SpringContextSingleton.getBeanInModulesContext("UserDataSourcePrototype");
+                UserDataSource userDataSource = new UserDataSource();
+                userDataSource.setJahiaUserManagerService(jahiaUserManagerService);
                 userDataSource.setUserGroupProvider(userGroupProvider);
                 ExternalContentStoreProvider userProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
                 userProvider.setKey(userProviderKey);
@@ -135,7 +141,9 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, J
 
                 ExternalContentStoreProvider groupProvider = null;
                 if (userGroupProvider.supportsGroups()) {
-                    GroupDataSource groupDataSource = (GroupDataSource) SpringContextSingleton.getBeanInModulesContext("GroupDataSourcePrototype");
+                    GroupDataSource groupDataSource = new GroupDataSource();
+                    groupDataSource.setJahiaUserManagerService(jahiaUserManagerService);
+                    groupDataSource.setJahiaGroupManagerService(jahiaGroupManagerService);
                     groupDataSource.setUserDataSource(userDataSource);
                     groupDataSource.setUserGroupProvider(userGroupProvider);
                     groupProvider = (ExternalContentStoreProvider) SpringContextSingleton.getBeanInModulesContext("ExternalStoreProviderPrototype");
@@ -299,5 +307,13 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, J
     @Override
     public Object postProcessAfterInitialization(Object o, String s) throws BeansException {
         return o;
+    }
+
+    public void setJahiaUserManagerService(JahiaUserManagerService jahiaUserManagerService) {
+        this.jahiaUserManagerService = jahiaUserManagerService;
+    }
+
+    public void setJahiaGroupManagerService(JahiaGroupManagerService jahiaGroupManagerService) {
+        this.jahiaGroupManagerService = jahiaGroupManagerService;
     }
 }
