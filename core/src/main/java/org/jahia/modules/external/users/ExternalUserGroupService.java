@@ -75,16 +75,6 @@ public interface ExternalUserGroupService {
     void register(String providerKey, UserGroupProvider userGroupProvider);
 
     /**
-     * Sets the provider configuration for the specified provider class.
-     *
-     * @param providerClass
-     *            the fully-qualified class name of the provider to set configuratoin for
-     * @param userGroupProviderConfig
-     *            the configuration object
-     */
-    void setConfiguration(String providerClass, UserGroupProviderConfiguration userGroupProviderConfig);
-
-    /**
      * Unregisters the user/group provider for the specified key.
      *
      * @param providerKey

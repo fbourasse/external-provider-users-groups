@@ -44,6 +44,7 @@
 package org.jahia.modules.external.users.impl;
 
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.gemini.blueprint.context.BundleContextAware;
 import org.jahia.exceptions.JahiaInitializationException;
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.users.ExternalUserGroupService;
@@ -57,28 +58,23 @@ import org.jahia.services.content.JCRSessionWrapper;
 import org.jahia.services.content.JCRStoreProvider;
 import org.jahia.services.content.JCRTemplate;
 import org.jahia.services.content.decorator.JCRMountPointNode;
-import org.jahia.services.templates.JahiaModulesBeanPostProcessor;
 import org.jahia.services.usermanager.JahiaGroupManagerService;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.settings.SettingsBean;
+import org.osgi.framework.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
 
 import javax.jcr.RepositoryException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Implementation of the external user/group service.
  */
-public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, JahiaModulesBeanPostProcessor {
+public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, BundleContextAware {
 
     private static final List<String> EXTENDABLE_TYPES = Arrays.asList("nt:base");
     private static final List<String> OVERRIDABLE_ITEMS = Arrays.asList("jnt:user.*", "jnt:usersFolder.*", "mix:lastModified.*", "jmix:lastPublished.*");
@@ -97,6 +93,43 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, J
 
     private Map<String, UserGroupProviderConfiguration> providerConfigurations = new ConcurrentHashMap<String, UserGroupProviderConfiguration>();
     private Map<String, UserGroupProviderConfiguration> providerConfigurationsUnmodifiable = Collections.unmodifiableMap(providerConfigurations);
+
+    private BundleContext bundleContext;
+    private ServiceListener userGroupProviderConfigurationsServiceListener = new ServiceListener() {
+        @Override
+        public void serviceChanged(ServiceEvent serviceEvent) {
+            if (ServiceEvent.UNREGISTERING == serviceEvent.getType()) {
+                UserGroupProviderConfiguration service = (UserGroupProviderConfiguration)
+                        bundleContext.getService(serviceEvent.getServiceReference());
+                providerConfigurations.remove(service.getProviderClass());
+            } else if (ServiceEvent.REGISTERED == serviceEvent.getType()) {
+                UserGroupProviderConfiguration service = (UserGroupProviderConfiguration)
+                        bundleContext.getService(serviceEvent.getServiceReference());
+                providerConfigurations.put(service.getProviderClass(), service);
+            }
+        }
+    };
+
+    public void init() {
+        try {
+            String filter = "(objectclass=" + UserGroupProviderConfiguration.class.getName() + ")";
+            bundleContext.addServiceListener(userGroupProviderConfigurationsServiceListener, filter);
+
+            // hack to get all the already exposed userGroupProviderConfiguration
+            ServiceReference[] srl = bundleContext.getServiceReferences(null, filter);
+            if(srl != null && srl.length > 0) {
+                for (ServiceReference aSrl : srl) {
+                    userGroupProviderConfigurationsServiceListener.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, aSrl));
+                }
+            }
+        } catch (InvalidSyntaxException e) {
+            logger.error("Unable to register service listener to track user and group provider configurations");
+        }
+    }
+
+    public void destroy() {
+        bundleContext.removeServiceListener(userGroupProviderConfigurationsServiceListener);
+    }
 
     @Override
     public void register(String providerKey, final UserGroupProvider userGroupProvider) {
@@ -252,11 +285,6 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, J
     }
 
     @Override
-    public void setConfiguration(String providerClass, UserGroupProviderConfiguration userGroupProviderConfig) {
-        providerConfigurations.put(providerClass, userGroupProviderConfig);
-    }
-
-    @Override
     public void setMountStatus(String providerKey, JCRMountPointNode.MountStatus status, String message) {
         UserGroupProviderRegistration registration = registeredProviders.get(providerKey);
         setProviderMountStatus(registration.getUserProvider(), status, message);
@@ -284,36 +312,16 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, J
         this.readOnlyUserProperties = readOnlyUserProperties;
     }
 
-    @Override
-    public void postProcessBeforeDestruction(Object o, String s) throws BeansException {
-        if (o instanceof UserGroupProviderConfiguration) {
-            String key = null;
-            for (Map.Entry<String, UserGroupProviderConfiguration> entry : providerConfigurations.entrySet()) {
-                if (entry.getValue() == o) {
-                    key = entry.getKey();
-                }
-            }
-            if (key != null) {
-                providerConfigurations.remove(key);
-            }
-        }
-    }
-
-    @Override
-    public Object postProcessBeforeInitialization(Object o, String s) throws BeansException {
-        return o;
-    }
-
-    @Override
-    public Object postProcessAfterInitialization(Object o, String s) throws BeansException {
-        return o;
-    }
-
     public void setJahiaUserManagerService(JahiaUserManagerService jahiaUserManagerService) {
         this.jahiaUserManagerService = jahiaUserManagerService;
     }
 
     public void setJahiaGroupManagerService(JahiaGroupManagerService jahiaGroupManagerService) {
         this.jahiaGroupManagerService = jahiaGroupManagerService;
+    }
+
+    @Override
+    public void setBundleContext(BundleContext bundleContext) {
+        this.bundleContext = bundleContext;
     }
 }

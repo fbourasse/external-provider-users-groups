@@ -52,6 +52,11 @@ import java.util.Map;
 public interface UserGroupProviderConfiguration extends Serializable {
 
     /**
+     * @return the provider class name where this configuration apply to
+     */
+    String getProviderClass();
+
+    /**
      * @return the name of provider configuration
      */
     String getName();

@@ -10,7 +10,8 @@
 
   <bean id="messageSource" class="org.jahia.utils.i18n.ModuleMessageSource"/>
 
-  <bean id="ExternalUserGroupServiceImpl" class="org.jahia.modules.external.users.impl.ExternalUserGroupServiceImpl">
+  <bean id="ExternalUserGroupServiceImpl" class="org.jahia.modules.external.users.impl.ExternalUserGroupServiceImpl"
+        init-method="init" destroy-method="destroy">
     <property name="jahiaUserManagerService" ref="JahiaUserManagerService"/>
     <property name="jahiaGroupManagerService" ref="JahiaGroupManagerService"/>
     <property name="readOnlyUserProperties" value="${external.users.properties.readonly:j:firstName,j:lastName,j:organization,j:email}"/>
@@ -37,5 +38,4 @@
       </map>
     </property>
   </bean>
-
 </beans>
