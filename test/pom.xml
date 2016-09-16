@@ -78,7 +78,7 @@
         <dependency>
             <groupId>org.jahia.modules</groupId>
             <artifactId>external-provider-users-groups</artifactId>
-            <version>1.1.0-SNAPSHOT</version>
+            <version>1.1.0-backlog_5021-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
