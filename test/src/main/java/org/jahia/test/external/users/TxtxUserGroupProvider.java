@@ -104,7 +104,7 @@ public class TxtxUserGroupProvider extends BaseUserGroupProvider {
     }
 
     @Override
-    public List<String> getMembership(Member member) {
+    public List<String> getMembership(Properties searchCriteria,Member member) {
         if ("tata".equals(member.getName())) {
             return Arrays.asList("toto");
         } else if ("tete".equals(member.getName())) {
