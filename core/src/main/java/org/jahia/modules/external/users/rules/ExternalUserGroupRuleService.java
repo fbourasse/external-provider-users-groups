@@ -47,29 +47,15 @@ import org.jahia.modules.external.users.ExternalUserGroupService;
 import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.rules.AddedNodeFact;
 import org.jahia.services.sites.JahiaSite;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.jcr.RepositoryException;
 
 public class ExternalUserGroupRuleService {
-    private static final Logger logger = LoggerFactory.getLogger(ExternalUserGroupRuleService.class);
-
     private ExternalUserGroupService externalUserGroupService;
 
     public void initSiteForPendingProviders(AddedNodeFact nodeFact) {
         JCRNodeWrapper node = nodeFact.getNode();
-        try {
-            if (node instanceof JahiaSite && !node.isNodeType("jnt:module")) {
-                String siteKey = ((JahiaSite) node).getSiteKey();
-                if(externalUserGroupService == null) {
-                    throw new IllegalStateException("External user group service is not yet initialized, " +
-                            "unable to check site for pending provider for site " + siteKey);
-                }
-                externalUserGroupService.initSiteForPendingProviders(siteKey);
-            }
-        } catch (RepositoryException e) {
-            logger.error("Error during providers init check up for new site nodes", e);
+        if (node instanceof JahiaSite) {
+            externalUserGroupService.initSiteForPendingProviders(((JahiaSite) node).getSiteKey());
         }
     }
 

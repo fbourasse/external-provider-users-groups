@@ -18,6 +18,7 @@ rule "Check user providers waiting for a site"
     when
         A new node is created
                     - the node has the type jnt:virtualsite
+                    - it has no type jnt:module
     then
 >       externalUserGroupRuleService.initSiteForPendingProviders(node);
 end
