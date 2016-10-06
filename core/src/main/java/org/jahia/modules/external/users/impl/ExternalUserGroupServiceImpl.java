@@ -74,7 +74,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 /**
  * Implementation of the external user/group service.
  */
-public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, BundleContextAware {
+public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
     private static final List<String> EXTENDABLE_TYPES = Arrays.asList("nt:base");
     private static final List<String> OVERRIDABLE_ITEMS = Arrays.asList("jnt:user.*", "jnt:usersFolder.*", "mix:lastModified.*", "jmix:lastPublished.*");
@@ -91,44 +91,10 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, B
     private Map<String, UserGroupProviderRegistration> registeredProviders = new ConcurrentSkipListMap<String, UserGroupProviderRegistration>();
     private Map<String, UserGroupProviderRegistration> registeredProvidersUnmodifiable = Collections.unmodifiableMap(registeredProviders);
 
-    private Map<String, UserGroupProviderConfiguration> providerConfigurations = new ConcurrentHashMap<String, UserGroupProviderConfiguration>();
-    private Map<String, UserGroupProviderConfiguration> providerConfigurationsUnmodifiable = Collections.unmodifiableMap(providerConfigurations);
+    private List<UserGroupProviderConfiguration> providerConfigurations;
 
-    private BundleContext bundleContext;
-    private ServiceListener userGroupProviderConfigurationsServiceListener = new ServiceListener() {
-        @Override
-        public void serviceChanged(ServiceEvent serviceEvent) {
-            if (ServiceEvent.UNREGISTERING == serviceEvent.getType()) {
-                UserGroupProviderConfiguration service = (UserGroupProviderConfiguration)
-                        bundleContext.getService(serviceEvent.getServiceReference());
-                providerConfigurations.remove(service.getProviderClass());
-            } else if (ServiceEvent.REGISTERED == serviceEvent.getType()) {
-                UserGroupProviderConfiguration service = (UserGroupProviderConfiguration)
-                        bundleContext.getService(serviceEvent.getServiceReference());
-                providerConfigurations.put(service.getProviderClass(), service);
-            }
-        }
-    };
-
-    public void init() {
-        try {
-            String filter = "(objectclass=" + UserGroupProviderConfiguration.class.getName() + ")";
-            bundleContext.addServiceListener(userGroupProviderConfigurationsServiceListener, filter);
-
-            // hack to get all the already exposed userGroupProviderConfiguration
-            ServiceReference[] srl = bundleContext.getServiceReferences(null, filter);
-            if(srl != null && srl.length > 0) {
-                for (ServiceReference aSrl : srl) {
-                    userGroupProviderConfigurationsServiceListener.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, aSrl));
-                }
-            }
-        } catch (InvalidSyntaxException e) {
-            logger.error("Unable to register service listener to track user and group provider configurations");
-        }
-    }
-
-    public void destroy() {
-        bundleContext.removeServiceListener(userGroupProviderConfigurationsServiceListener);
+    public void setUserGroupProviderConfigurations(List<UserGroupProviderConfiguration> configurations) {
+        this.providerConfigurations = configurations;
     }
 
     @Override
@@ -300,7 +266,11 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, B
 
     @Override
     public Map<String, UserGroupProviderConfiguration> getProviderConfigurations() {
-        return providerConfigurationsUnmodifiable;
+        Map<String, UserGroupProviderConfiguration> m = new HashMap<String, UserGroupProviderConfiguration>();
+        for (UserGroupProviderConfiguration configuration : providerConfigurations) {
+            m.put(configuration.getProviderClass(), configuration);
+        }
+        return m;
     }
 
     @Override
@@ -320,8 +290,4 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService, B
         this.jahiaGroupManagerService = jahiaGroupManagerService;
     }
 
-    @Override
-    public void setBundleContext(BundleContext bundleContext) {
-        this.bundleContext = bundleContext;
-    }
 }
