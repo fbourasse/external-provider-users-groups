@@ -44,6 +44,7 @@
 package org.jahia.modules.external.users.impl;
 
 import org.apache.jackrabbit.commons.query.qom.Operator;
+import org.jahia.api.Constants;
 import org.jahia.utils.Patterns;
 
 import javax.jcr.RepositoryException;
@@ -65,45 +66,69 @@ final class SearchCriteriaHelper {
      * @throws RepositoryException
      */
     static boolean fillCriteriaFromConstraint(Constraint constraint, Properties searchCriteria, String principalNameProperty) throws RepositoryException {
+        boolean hasOrConstraint = false;
         if (constraint == null) {
             searchCriteria.put("*", "*");
-            return false;
         } else if (constraint instanceof And) {
-        	And andConstraint = (And) constraint;
-        	boolean constraint1IsOr = fillCriteriaFromConstraint(andConstraint.getConstraint1(), searchCriteria, principalNameProperty);
-        	boolean constraint2IsOr = fillCriteriaFromConstraint(andConstraint.getConstraint2(), searchCriteria, principalNameProperty);
-        	return (constraint1IsOr || constraint2IsOr);
+            And andConstraint = (And) constraint;
+            boolean constraint1IsOr = fillCriteriaFromConstraint(andConstraint.getConstraint1(), searchCriteria, principalNameProperty);
+            boolean constraint2IsOr = fillCriteriaFromConstraint(andConstraint.getConstraint2(), searchCriteria, principalNameProperty);
+            hasOrConstraint = constraint1IsOr || constraint2IsOr;
         } else if (constraint instanceof Or) {
             Constraint constraint1 = ((Or) constraint).getConstraint1();
             Constraint constraint2 = ((Or) constraint).getConstraint2();
-            if (constraint1 instanceof FullTextSearch
-                    && ((FullTextSearch) constraint1).getPropertyName() == null
-                    && constraint2 instanceof Comparison
-                    && Operator.LIKE.toString().equals(((Comparison) constraint2).getOperator())
-                    && ((Comparison) constraint2).getOperand1() instanceof LowerCase
-                    && ((LowerCase) ((Comparison) constraint2).getOperand1()).getOperand() instanceof PropertyValue
-                    && "j:nodename".equals(((PropertyValue) ((LowerCase) ((Comparison) constraint2).getOperand1()).getOperand()).getPropertyName())
-                    && ((Comparison) constraint2).getOperand2() instanceof Literal) {
+            if (isStandardFulltextSearchClause(constraint1, constraint2)) {
                 searchCriteria.put("*", getLikeComparisonValue(((Literal) ((Comparison) constraint2).getOperand2()).getLiteralValue().getString()));
-                return false;
-            } else {
+            } else if (!isStandardLanguageClause(constraint1, constraint2)) { //ignore language clause for user-group-provider searches
                 fillCriteriaFromConstraint(constraint1, searchCriteria, principalNameProperty);
                 fillCriteriaFromConstraint(constraint2, searchCriteria, principalNameProperty);
-                return true;
+                hasOrConstraint = true;
             }
         } else if (constraint instanceof Comparison) {
             String operator = ((Comparison) constraint).getOperator();
-            DynamicOperand operand1 = ((Comparison) constraint).getOperand1();
-            StaticOperand operand2 = ((Comparison) constraint).getOperand2();
-            if (Operator.LIKE.toString().equals(operator)) {
+            boolean isLike = Operator.LIKE.toString().equals(operator);
+            boolean isEquals = Operator.EQ.toString().equals(operator);
+            if (isLike || isEquals) {
+                DynamicOperand operand1 = ((Comparison) constraint).getOperand1();
+                StaticOperand operand2 = ((Comparison) constraint).getOperand2();
                 String key = getCriteriaKey(operand1, principalNameProperty);
                 if (key != null && operand2 instanceof Literal) {
-                    searchCriteria.put(key, getLikeComparisonValue(((Literal) operand2).getLiteralValue().getString()));
+                    String literal = ((Literal) operand2).getLiteralValue().getString();
+                    searchCriteria.put(key, isLike ? getLikeComparisonValue(literal) : literal);
                 }
-            } else if (Operator.EQ.toString().equals(operator)) {
-                String key = getCriteriaKey(operand1, principalNameProperty);
-                if (key != null && operand2 instanceof Literal) {
-                    searchCriteria.put(key, ((Literal) operand2).getLiteralValue().getString());
+            }
+        }
+        return hasOrConstraint;
+    }
+    
+    private static boolean isStandardFulltextSearchClause(Constraint constraint1, Constraint constraint2) {
+        if (constraint1 instanceof FullTextSearch && ((FullTextSearch) constraint1).getPropertyName() == null
+                && constraint2 instanceof Comparison) {
+            Comparison comparison = (Comparison) constraint2;
+            if (Operator.LIKE.toString().equals(comparison.getOperator()) && comparison.getOperand1() instanceof LowerCase
+                    && comparison.getOperand2() instanceof Literal) {
+                LowerCase lowerCase = (LowerCase) comparison.getOperand1();
+
+                if (lowerCase.getOperand() instanceof PropertyValue
+                        && Constants.NODENAME.equals(((PropertyValue) lowerCase.getOperand()).getPropertyName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    private static boolean isStandardLanguageClause(Constraint constraint1, Constraint constraint2) {
+        if (constraint1 instanceof Not && constraint2 instanceof Comparison) {
+            Not notConstraint = (Not) constraint1;
+            Comparison comparisonConstraint = (Comparison) constraint2;
+            if (notConstraint.getConstraint() instanceof PropertyExistence && comparisonConstraint.getOperand1() instanceof PropertyValue) {
+                PropertyExistence propertyExistence = (PropertyExistence) notConstraint.getConstraint();
+                PropertyValue propertyValue = (PropertyValue) comparisonConstraint.getOperand1();
+
+                if (Constants.JCR_LANGUAGE.equals(propertyExistence.getPropertyName())
+                        && Constants.JCR_LANGUAGE.equals(propertyValue.getPropertyName())) {
+                    return true;
                 }
             }
         }
@@ -120,7 +145,7 @@ final class SearchCriteriaHelper {
         } else if (operand1 instanceof NodeLocalName) {
             key = principalNameProperty;
         }
-        if ("j:nodename".equals(key)) {
+        if (Constants.NODENAME.equals(key)) {
             key = principalNameProperty;
         }
         return key;
