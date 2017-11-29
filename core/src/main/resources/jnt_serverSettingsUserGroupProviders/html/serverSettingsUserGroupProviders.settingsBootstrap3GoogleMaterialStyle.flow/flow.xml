@@ -6,7 +6,7 @@
 
     <var name="userGroupProviderHandler" class="org.jahia.modules.external.users.admin.UserGroupProviderAdminFlow"/>
 
-    <view-state id="view" >
+    <view-state id="view.settingsBootstrap3GoogleMaterialStyle" >
         <on-render>
             <evaluate expression="userGroupProviderHandler.userGroupProviders" result="requestScope.userGroupProviders"/>
             <evaluate expression="userGroupProviderHandler.createConfigurations" result="requestScope.createConfigurations"/>
@@ -28,7 +28,7 @@
         <transition to="view"/>
     </action-state>
 
-    <view-state id="createProviderForm">
+    <view-state id="createProviderForm.settingsBootstrap3GoogleMaterialStyle">
         <on-entry>
             <evaluate expression="requestParameters.providerName" result="flashScope.providerName"/>
             <evaluate expression="requestParameters.providerClass" result="flashScope.providerClass"/>
@@ -46,7 +46,7 @@
         <transition to="view"/>
     </action-state>
 
-    <view-state id="editProviderForm">
+    <view-state id="editProviderForm.settingsBootstrap3GoogleMaterialStyle">
         <on-entry>
             <evaluate expression="requestParameters.providerKey" result="flashScope.providerKey"/>
             <evaluate expression="requestParameters.providerClass" result="flashScope.providerClass"/>
@@ -64,7 +64,7 @@
         <transition to="view"/>
     </action-state>
 
-    <view-state id="deleteProviderForm">
+    <view-state id="deleteProviderForm.settingsBootstrap3GoogleMaterialStyle">
       <on-entry>
         <evaluate expression="requestParameters.providerKey" result="flashScope.providerKey"/>
         <evaluate expression="requestParameters.providerClass" result="flashScope.providerClass"/>
