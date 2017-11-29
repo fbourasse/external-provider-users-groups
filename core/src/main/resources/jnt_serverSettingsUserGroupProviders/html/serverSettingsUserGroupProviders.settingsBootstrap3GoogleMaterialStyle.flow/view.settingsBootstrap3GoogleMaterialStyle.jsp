@@ -99,17 +99,17 @@
                     <td>
                         <c:choose>
                             <c:when test="${not userGroupProvider.targetAvailable}">
-                <span class="badge badge-pill red">
+                <span class="label label-danger">
                     <fmt:message key="label.userGroupProvider.targetUnavailable"/>
                 </span>
                             </c:when>
                             <c:when test="${userGroupProvider.running}">
-                <span class="badge badge-pill green">
+                <span class="label label-success">
                     <fmt:message key="label.userGroupProvider.running"/>
                 </span>
                             </c:when>
                             <c:otherwise>
-                <span class="badge badge-pill orange">
+                <span class="label label-warning">
                     <fmt:message key="label.userGroupProvider.stopped"/>
                 </span>
                             </c:otherwise>

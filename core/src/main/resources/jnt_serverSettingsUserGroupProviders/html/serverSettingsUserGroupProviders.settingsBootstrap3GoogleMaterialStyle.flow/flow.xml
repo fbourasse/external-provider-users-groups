@@ -20,12 +20,12 @@
 
     <action-state id="suspendProvider">
         <evaluate expression="userGroupProviderHandler.suspendProvider(requestParameters.providerKey, messageContext)"/>
-        <transition to="view"/>
+        <transition to="view.settingsBootstrap3GoogleMaterialStyle"/>
     </action-state>
 
     <action-state id="resumeProvider">
         <evaluate expression="userGroupProviderHandler.resumeProvider(requestParameters.providerKey, messageContext)"/>
-        <transition to="view"/>
+        <transition to="view.settingsBootstrap3GoogleMaterialStyle"/>
     </action-state>
 
     <view-state id="createProviderForm.settingsBootstrap3GoogleMaterialStyle">
@@ -40,10 +40,10 @@
 
     <action-state id="createProvider">
         <evaluate expression="userGroupProviderHandler.createProvider(requestParameters, flashScope, messageContext)"/>
-        <transition on-exception="java.lang.Exception" to="createProviderForm.settingsBootstrap3GoogleMaterialStyle">
+        <transition on-exception="java.lang.Exception" to="createProviderForm;settingsBootstrap3GoogleMaterialStyle">
           <set name="flashScope.error" value="rootCauseException"/>
         </transition>
-        <transition to="view"/>
+        <transition to="view.settingsBootstrap3GoogleMaterialStyle"/>
     </action-state>
 
     <view-state id="editProviderForm.settingsBootstrap3GoogleMaterialStyle">
@@ -61,7 +61,7 @@
         <transition on-exception="java.lang.Exception" to="editProviderForm.settingsBootstrap3GoogleMaterialStyle">
           <set name="flashScope.error" value="rootCauseException"/>
         </transition>
-        <transition to="view"/>
+        <transition to="view.settingsBootstrap3GoogleMaterialStyle"/>
     </action-state>
 
     <view-state id="deleteProviderForm.settingsBootstrap3GoogleMaterialStyle">
@@ -78,7 +78,7 @@
         <transition on-exception="java.lang.Exception" to="deleteProviderForm.settingsBootstrap3GoogleMaterialStyle">
           <set name="flashScope.error" value="rootCauseException"/>
         </transition>
-        <transition to="view"/>
+        <transition to="view.settingsBootstrap3GoogleMaterialStyle"/>
     </action-state>
 
     <end-state id="theEnd"/>
