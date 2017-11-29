@@ -13,9 +13,9 @@
         </on-render>
         <transition on="suspendProvider" to="suspendProvider"/>
         <transition on="resumeProvider" to="resumeProvider"/>
-        <transition on="createProvider" to="createProviderForm"/>
-        <transition on="editProvider" to="editProviderForm"/>
-        <transition on="deleteProvider" to="deleteProviderForm"/>
+        <transition on="createProvider" to="createProviderForm.settingsBootstrap3GoogleMaterialStyle"/>
+        <transition on="editProvider" to="editProviderForm.settingsBootstrap3GoogleMaterialStyle"/>
+        <transition on="deleteProvider" to="deleteProviderForm.settingsBootstrap3GoogleMaterialStyle"/>
     </view-state>
 
     <action-state id="suspendProvider">
@@ -40,7 +40,7 @@
 
     <action-state id="createProvider">
         <evaluate expression="userGroupProviderHandler.createProvider(requestParameters, flashScope, messageContext)"/>
-        <transition on-exception="java.lang.Exception" to="createProviderForm">
+        <transition on-exception="java.lang.Exception" to="createProviderForm.settingsBootstrap3GoogleMaterialStyle">
           <set name="flashScope.error" value="rootCauseException"/>
         </transition>
         <transition to="view"/>
@@ -58,7 +58,7 @@
 
     <action-state id="editProvider">
         <evaluate expression="userGroupProviderHandler.editProvider(requestParameters, flashScope, messageContext)"/>
-        <transition on-exception="java.lang.Exception" to="editProviderForm">
+        <transition on-exception="java.lang.Exception" to="editProviderForm.settingsBootstrap3GoogleMaterialStyle">
           <set name="flashScope.error" value="rootCauseException"/>
         </transition>
         <transition to="view"/>
@@ -75,7 +75,7 @@
 
     <action-state id="deleteProvider">
         <evaluate expression="userGroupProviderHandler.deleteProvider(requestParameters.providerKey, requestParameters.providerClass, flashScope, messageContext)"/>
-        <transition on-exception="java.lang.Exception" to="deleteProviderForm">
+        <transition on-exception="java.lang.Exception" to="deleteProviderForm.settingsBootstrap3GoogleMaterialStyle">
           <set name="flashScope.error" value="rootCauseException"/>
         </transition>
         <transition to="view"/>
