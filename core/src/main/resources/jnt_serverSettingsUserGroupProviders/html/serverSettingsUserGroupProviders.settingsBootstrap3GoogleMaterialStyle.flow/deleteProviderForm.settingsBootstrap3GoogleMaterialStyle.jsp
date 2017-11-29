@@ -14,14 +14,18 @@
 <%--@elvariable id="currentResource" type="org.jahia.services.render.Resource"--%>
 <%--@elvariable id="url" type="org.jahia.services.render.URLGenerator"--%>
 
-<template:addResources type="javascript" resources="jquery.min.js,jquery-ui.min.js,admin-bootstrap.js,bootstrap-filestyle.min.js,jquery.metadata.js,jquery.tablesorter.js,jquery.tablecloth.js,jquery.blockUI.js,workInProgress.js"/>
+<template:addResources type="javascript"
+                       resources="jquery.min.js,jquery-ui.min.js,admin-bootstrap.js,bootstrap-filestyle.min.js,jquery.metadata.js,jquery.tablesorter.js,jquery.tablecloth.js,jquery.blockUI.js,workInProgress.js"/>
 <template:addResources type="css" resources="jquery-ui.smoothness.css,jquery-ui.smoothness-jahia.css,tablecloth.css"/>
-<fmt:message key="label.workInProgressTitle" var="i18nWaiting"/><c:set var="i18nWaiting" value="${functions:escapeJavaScript(i18nWaiting)}"/>
+<fmt:message key="label.workInProgressTitle" var="i18nWaiting"/><c:set var="i18nWaiting"
+                                                                       value="${functions:escapeJavaScript(i18nWaiting)}"/>
 
 
-<h2><fmt:message key="label.userGroupProvider.delete">
-    <fmt:param value="${providerKey}"/>
-</fmt:message></h2>
+<div class="page-header">
+    <h2><fmt:message key="label.userGroupProvider.delete">
+        <fmt:param value="${providerKey}"/>
+    </fmt:message></h2>
+</div>
 
 <c:if test="${not empty error}">
     <div class="alert alert-error">${error}</div>

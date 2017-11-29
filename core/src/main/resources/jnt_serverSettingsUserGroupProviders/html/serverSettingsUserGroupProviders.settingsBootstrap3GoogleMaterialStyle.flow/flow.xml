@@ -40,7 +40,7 @@
 
     <action-state id="createProvider">
         <evaluate expression="userGroupProviderHandler.createProvider(requestParameters, flashScope, messageContext)"/>
-        <transition on-exception="java.lang.Exception" to="createProviderForm;settingsBootstrap3GoogleMaterialStyle">
+        <transition on-exception="java.lang.Exception" to="createProviderForm.settingsBootstrap3GoogleMaterialStyle">
           <set name="flashScope.error" value="rootCauseException"/>
         </transition>
         <transition to="view.settingsBootstrap3GoogleMaterialStyle"/>

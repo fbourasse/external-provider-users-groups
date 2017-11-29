@@ -14,7 +14,7 @@
 <%--@elvariable id="currentResource" type="org.jahia.services.render.Resource"--%>
 <%--@elvariable id="url" type="org.jahia.services.render.URLGenerator"--%>
 
-<template:addResources type="javascript" resources="jquery.min.js,jquery-ui.min.js,admin-bootstrap.js,bootstrap-filestyle.min.js,jquery.metadata.js,jquery.tablesorter.js,jquery.tablecloth.js,jquery.blockUI.js,workInProgress.js"/>
+<template:addResources type="javascript" resources="jquery.min.js,jquery-ui.min.js,bootstrap-filestyle.min.js,jquery.metadata.js,jquery.tablesorter.js,jquery.tablecloth.js,jquery.blockUI.js,workInProgress.js"/>
 <template:addResources type="css" resources="jquery-ui.smoothness.css,jquery-ui.smoothness-jahia.css,tablecloth.css"/>
 <fmt:message key="label.workInProgressTitle" var="i18nWaiting"/><c:set var="i18nWaiting" value="${functions:escapeJavaScript(i18nWaiting)}"/>
 
@@ -35,10 +35,10 @@
     <jsp:include page="${editJSP}"/>
 
     <div>
-        <button class="btn btn-primary" type="submit" name="_eventId_save">
+        <button class="btn btn-sm btn-primary" type="submit" name="_eventId_save">
             <fmt:message key="label.save"/>
         </button>
-        <button class="btn" type="button" onclick="$('#cancelForm${currentNode.identifier}').submit()">
+        <button class="btn btn-sm btn-danger" type="button" onclick="$('#cancelForm${currentNode.identifier}').submit()">
             <fmt:message key="label.cancel"/>
         </button>
     </div>
