@@ -1,48 +1,71 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <content xmlns:j="http://www.jahia.org/jahia/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
-  <modules jcr:primaryType="jnt:modules">
-    <external-provider-users-groups j:dependencies="default external-provider serverSettings"
-                       j:modulePriority="0"
-                       j:moduleType="system"
-                       j:title="Jahia External Provider"
-                       jcr:mixinTypes="jmix:hasExternalProviderExtension"
-                       jcr:primaryType="jnt:module">
-
-      <portlets jcr:primaryType="jnt:portletFolder"/>
-      <files jcr:primaryType="jnt:folder"/>
-      <contents jcr:primaryType="jnt:contentFolder"/>
-      <templates jcr:primaryType="jnt:templatesFolder">
-        <files jcr:primaryType="jnt:folder">
-          <manage_users.png j:height="16"
-                               j:width="16"
-                               jcr:mixinTypes="jmix:image"
-                               jcr:primaryType="jnt:file">
-            <jcr:content jcr:mimeType="image/png" jcr:primaryType="jnt:resource"/>
-            <thumbnail jcr:mimeType="image/png" jcr:primaryType="jnt:resource"/>
-            <thumbnail2 jcr:mimeType="image/png" jcr:primaryType="jnt:resource"/>
-          </manage_users.png>
-        </files>
-        <contents jcr:primaryType="jnt:contentFolder"/>
-        <server-settings-base j:view="serverSettings"
-                              jcr:mixinTypes="jmix:useUILocale"
-                              jcr:primaryType="jnt:template">
-          <users-and-roles jcr:primaryType="jnt:template">
-            <manageUserGroupProviders j:applyOn="jnt:globalSettings"
-                               j:defaultTemplate="false"
-                               j:hiddenTemplate="false"
-                               j:icon="/modules/external-provider-users-groups/templates/files/manage_users.png"
-                               j:requiredPermissionNames="adminUsers"
-                               j:titleKey="serverSettings.manageUserGroupProviders"
-                               jcr:mixinTypes="jmix:rbTitle"
-                               jcr:primaryType="jnt:contentTemplate">
-              <pagecontent jcr:primaryType="jnt:contentList">
-                <serversettingsusergroupproviders jcr:primaryType="jnt:serverSettingsUserGroupProviders"/>
-              </pagecontent>
-            </manageUserGroupProviders>
-          </users-and-roles>
-        </server-settings-base>
-      </templates>
-
-    </external-provider-users-groups>
-  </modules>
+    <modules jcr:primaryType="jnt:modules">
+        <external-provider-users-groups j:dependencies="default external-provider serverSettings"
+                                      j:modulePriority="0"
+                                      j:moduleType="system"
+                                      j:title="Jahia External Provider"
+                                      jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                                      jcr:primaryType="jnt:module">
+                
+                <portlets jcr:primaryType="jnt:portletFolder"/>
+                <files jcr:primaryType="jnt:folder"/>
+                <contents jcr:primaryType="jnt:contentFolder"/>
+                <templates jcr:primaryType="jnt:templatesFolder">
+                    <files jcr:primaryType="jnt:folder">
+                        <manage_users.png j:height="16"
+                                 j:width="16"
+                                 jcr:mixinTypes="jmix:image"
+                                 jcr:primaryType="jnt:file">
+                            <jcr:content jcr:mimeType="image/png" jcr:primaryType="jnt:resource"/>
+                            <thumbnail jcr:mimeType="image/png" jcr:primaryType="jnt:resource"/>
+                            <thumbnail2 jcr:mimeType="image/png" jcr:primaryType="jnt:resource"/>
+                        </manage_users.png>
+                    </files>
+                    <contents jcr:primaryType="jnt:contentFolder"/>
+                    <server-settings-base j:view="serverSettings"
+                                  jcr:mixinTypes="jmix:useUILocale"
+                                  jcr:primaryType="jnt:template">
+                        <users-and-roles jcr:primaryType="jnt:template">
+                            <manageUserGroupProviders j:applyOn="jnt:globalSettings"
+                                            j:defaultTemplate="false"
+                                            j:hiddenTemplate="false"
+                                            j:icon="/modules/external-provider-users-groups/templates/files/manage_users.png"
+                                            j:requiredPermissionNames="adminUsers"
+                                            j:titleKey="serverSettings.manageUserGroupProviders"
+                                            jcr:mixinTypes="jmix:rbTitle"
+                                            jcr:primaryType="jnt:contentTemplate">
+                                <pagecontent jcr:primaryType="jnt:contentList">
+                                    <serversettingsusergroupproviders jcr:primaryType="jnt:serverSettingsUserGroupProviders"/>
+                                </pagecontent>
+                            </manageUserGroupProviders>
+                        </users-and-roles>
+                    </server-settings-base>
+                    <server-settings-base-jahia-anthracite j:hiddenTemplate="false"
+                             j:view="settingsBootstrap3GoogleMaterialStyle"
+                             jcr:primaryType="jnt:template">
+                        <users-and-roles-jahia-anthracite j:hiddenTemplate="false"
+                                                 j:view="settingsBootstrap3GoogleMaterialStyle"
+                                                 jcr:primaryType="jnt:template">
+                            <manageUserGroupProviders j:applyOn="jnt:globalSettings"
+                                            j:defaultTemplate="false"
+                                            j:hiddenTemplate="false"
+                                            j:icon="/modules/external-provider-users-groups/templates/files/manage_users.png"
+                                            j:requiredPermissionNames="adminUsers"
+                                            j:titleKey="serverSettings.manageUserGroupProviders"
+                                            j:view="settingsBootstrap3GoogleMaterialStyle"
+                                            jcr:mixinTypes="jmix:rbTitle"
+                                            jcr:primaryType="jnt:contentTemplate">
+                                <pagecontent jcr:primaryType="jnt:contentList">
+                                    <serversettingsusergroupproviders j:view="settingsBootstrap3GoogleMaterialStyle"
+                                                          jcr:mixinTypes="jmix:renderable"
+                                                          jcr:primaryType="jnt:serverSettingsUserGroupProviders"/>
+                                </pagecontent>
+                            </manageUserGroupProviders>
+                        </users-and-roles-jahia-anthracite>
+                    </server-settings-base-jahia-anthracite>
+                </templates>
+                
+            </external-provider-users-groups>
+    </modules>
 </content>
