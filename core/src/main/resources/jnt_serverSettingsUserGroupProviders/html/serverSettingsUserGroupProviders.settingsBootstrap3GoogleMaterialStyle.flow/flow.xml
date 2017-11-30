@@ -6,29 +6,29 @@
 
     <var name="userGroupProviderHandler" class="org.jahia.modules.external.users.admin.UserGroupProviderAdminFlow"/>
 
-    <view-state id="view.settingsBootstrap3GoogleMaterialStyle" >
+    <view-state id="view" >
         <on-render>
             <evaluate expression="userGroupProviderHandler.userGroupProviders" result="requestScope.userGroupProviders"/>
             <evaluate expression="userGroupProviderHandler.createConfigurations" result="requestScope.createConfigurations"/>
         </on-render>
         <transition on="suspendProvider" to="suspendProvider"/>
         <transition on="resumeProvider" to="resumeProvider"/>
-        <transition on="createProvider" to="createProviderForm.settingsBootstrap3GoogleMaterialStyle"/>
-        <transition on="editProvider" to="editProviderForm.settingsBootstrap3GoogleMaterialStyle"/>
-        <transition on="deleteProvider" to="deleteProviderForm.settingsBootstrap3GoogleMaterialStyle"/>
+        <transition on="createProvider" to="createProviderForm"/>
+        <transition on="editProvider" to="editProviderForm"/>
+        <transition on="deleteProvider" to="deleteProviderForm"/>
     </view-state>
 
     <action-state id="suspendProvider">
         <evaluate expression="userGroupProviderHandler.suspendProvider(requestParameters.providerKey, messageContext)"/>
-        <transition to="view.settingsBootstrap3GoogleMaterialStyle"/>
+        <transition to="view"/>
     </action-state>
 
     <action-state id="resumeProvider">
         <evaluate expression="userGroupProviderHandler.resumeProvider(requestParameters.providerKey, messageContext)"/>
-        <transition to="view.settingsBootstrap3GoogleMaterialStyle"/>
+        <transition to="view"/>
     </action-state>
 
-    <view-state id="createProviderForm.settingsBootstrap3GoogleMaterialStyle">
+    <view-state id="createProviderForm">
         <on-entry>
             <evaluate expression="requestParameters.providerName" result="flashScope.providerName"/>
             <evaluate expression="requestParameters.providerClass" result="flashScope.providerClass"/>
@@ -40,13 +40,13 @@
 
     <action-state id="createProvider">
         <evaluate expression="userGroupProviderHandler.createProvider(requestParameters, flashScope, messageContext)"/>
-        <transition on-exception="java.lang.Exception" to="createProviderForm.settingsBootstrap3GoogleMaterialStyle">
+        <transition on-exception="java.lang.Exception" to="createProviderForm">
           <set name="flashScope.error" value="rootCauseException"/>
         </transition>
-        <transition to="view.settingsBootstrap3GoogleMaterialStyle"/>
+        <transition to="view"/>
     </action-state>
 
-    <view-state id="editProviderForm.settingsBootstrap3GoogleMaterialStyle">
+    <view-state id="editProviderForm">
         <on-entry>
             <evaluate expression="requestParameters.providerKey" result="flashScope.providerKey"/>
             <evaluate expression="requestParameters.providerClass" result="flashScope.providerClass"/>
@@ -58,13 +58,13 @@
 
     <action-state id="editProvider">
         <evaluate expression="userGroupProviderHandler.editProvider(requestParameters, flashScope, messageContext)"/>
-        <transition on-exception="java.lang.Exception" to="editProviderForm.settingsBootstrap3GoogleMaterialStyle">
+        <transition on-exception="java.lang.Exception" to="editProviderForm">
           <set name="flashScope.error" value="rootCauseException"/>
         </transition>
-        <transition to="view.settingsBootstrap3GoogleMaterialStyle"/>
+        <transition to="view"/>
     </action-state>
 
-    <view-state id="deleteProviderForm.settingsBootstrap3GoogleMaterialStyle">
+    <view-state id="deleteProviderForm">
       <on-entry>
         <evaluate expression="requestParameters.providerKey" result="flashScope.providerKey"/>
         <evaluate expression="requestParameters.providerClass" result="flashScope.providerClass"/>
@@ -75,10 +75,10 @@
 
     <action-state id="deleteProvider">
         <evaluate expression="userGroupProviderHandler.deleteProvider(requestParameters.providerKey, requestParameters.providerClass, flashScope, messageContext)"/>
-        <transition on-exception="java.lang.Exception" to="deleteProviderForm.settingsBootstrap3GoogleMaterialStyle">
+        <transition on-exception="java.lang.Exception" to="deleteProviderForm">
           <set name="flashScope.error" value="rootCauseException"/>
         </transition>
-        <transition to="view.settingsBootstrap3GoogleMaterialStyle"/>
+        <transition to="view"/>
     </action-state>
 
     <end-state id="theEnd"/>

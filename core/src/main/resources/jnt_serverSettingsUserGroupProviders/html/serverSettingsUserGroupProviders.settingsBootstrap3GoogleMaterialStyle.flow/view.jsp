@@ -127,26 +127,30 @@
 
                             <c:choose>
                                 <c:when test="${userGroupProvider.running}">
-                                    <button class="btn btn-default btn-sm btn-primary" type="submit" name="_eventId_suspendProvider">
-                                        <fmt:message key="label.userGroupProvider.suspend"/>
+                                    <button data-toggle="tooltip" title="<fmt:message key="label.userGroupProvider.suspend"/>"
+                                            class="btn btn-default btn-sm btn-primary" type="submit" name="_eventId_suspendProvider">
+                                        <i class="material-icons">pause</i>
                                     </button>
                                 </c:when>
                                 <c:otherwise>
-                                    <button class="btn btn-default btn-sm btn-primary" type="submit" name="_eventId_resumeProvider">
-                                        <fmt:message key="label.userGroupProvider.resume"/>
+                                    <button title="<fmt:message key="label.userGroupProvider.resume"/>" data-toggle="tooltip"
+                                            class="btn btn-default btn-sm btn-primary" type="submit" name="_eventId_resumeProvider">
+                                        <i class="material-icons">play_arrow</i>
                                     </button>
                                 </c:otherwise>
                             </c:choose>
 
                             <c:if test="${userGroupProvider.editSupported}">
-                                <button class="btn btn-default btn-sm btn-primary" type="submit" name="_eventId_editProvider">
-                                    <fmt:message key="label.edit"/>
+                                <button title="<fmt:message key="label.edit"/>" class="btn btn-default btn-sm btn-primary"
+                                        type="submit" name="_eventId_editProvider" data-toggle="tooltip">
+                                        <i class="material-icons">edit</i>
                                 </button>
                             </c:if>
 
                             <c:if test="${userGroupProvider.deleteSupported}">
-                                <button class="btn btn-danger" type="submit" name="_eventId_deleteProvider">
-                                    <fmt:message key="label.delete"/>
+                                <button title="<fmt:message key="label.delete"/>" class="btn btn-danger" type="submit"
+                                        name="_eventId_deleteProvider" data-toggle="tooltip">
+                                    <i class="material-icons">delete</i>
                                 </button>
                             </c:if>
                         </form>
