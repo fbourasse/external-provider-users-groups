@@ -42,7 +42,7 @@
                 <button class="btn btn-primary" type="submit" name="_eventId_create">
                     <fmt:message key="label.save"/>
                 </button>
-                <button class="btn" type="button" onclick="$('#cancelForm${currentNode.identifier}').submit()">
+                <button class="btn btn-danger" type="button" onclick="$('#cancelForm${currentNode.identifier}').submit()">
                     <fmt:message key="label.cancel"/>
                 </button>
             </div>

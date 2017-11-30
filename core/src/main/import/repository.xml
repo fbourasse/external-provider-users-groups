@@ -47,7 +47,7 @@
                         <users-and-roles-jahia-anthracite j:hiddenTemplate="false"
                                                  j:view="settingsBootstrap3GoogleMaterialStyle"
                                                  jcr:primaryType="jnt:template">
-                            <manageUserGroupProviders j:applyOn="jnt:globalSettings"
+                            <manageUserGroupProviders-jahia-anthracite j:applyOn="jnt:globalSettings"
                                             j:defaultTemplate="false"
                                             j:hiddenTemplate="false"
                                             j:icon="/modules/external-provider-users-groups/templates/files/manage_users.png"
@@ -61,7 +61,7 @@
                                                           jcr:mixinTypes="jmix:renderable"
                                                           jcr:primaryType="jnt:serverSettingsUserGroupProviders"/>
                                 </pagecontent>
-                            </manageUserGroupProviders>
+                            </manageUserGroupProviders-jahia-anthracite>
                         </users-and-roles-jahia-anthracite>
                     </server-settings-base-jahia-anthracite>
                 </templates>

@@ -31,18 +31,22 @@
     <div class="alert alert-error">${error}</div>
 </c:if>
 
-<div class="alert"><fmt:message key="label.userGroupProvider.delete.confirm"/></div>
+<div class="panel panel-default">
+    <div class="panel-body">
+        <div class="alert"><fmt:message key="label.userGroupProvider.delete.confirm"/></div>
 
-<form style="margin: 0;" action="${flowExecutionUrl}" method="post" onsubmit="workInProgress('${i18nWaiting}')">
-    <input type="hidden" name="providerKey" value="${providerKey}"/>
-    <input type="hidden" name="providerClass" value="${providerClass}"/>
+        <form style="margin: 0;" action="${flowExecutionUrl}" method="post" onsubmit="workInProgress('${i18nWaiting}')">
+            <input type="hidden" name="providerKey" value="${providerKey}"/>
+            <input type="hidden" name="providerClass" value="${providerClass}"/>
 
-    <div>
-        <button class="btn btn-primary" type="submit" name="_eventId_delete">
-            <fmt:message key="label.delete"/>
-        </button>
-        <button class="btn" type="submit" name="_eventId_cancel">
-            <fmt:message key="label.cancel"/>
-        </button>
+            <div>
+                <button class="btn btn-primary" type="submit" name="_eventId_delete">
+                    <fmt:message key="label.delete"/>
+                </button>
+                <button class="btn btn-danger" type="submit" name="_eventId_cancel">
+                    <fmt:message key="label.cancel"/>
+                </button>
+            </div>
+        </form>
     </div>
-</form>
+</div>
