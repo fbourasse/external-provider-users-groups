@@ -21,10 +21,9 @@
                                                                        value="${functions:escapeJavaScript(i18nWaiting)}"/>
 
 
+
 <div class="page-header">
-    <h2><fmt:message key="label.userGroupProvider.delete">
-        <fmt:param value="${providerKey}"/>
-    </fmt:message></h2>
+    <h2><fmt:message key="serverSettings.manageUserGroupProviders"/></h2>
 </div>
 
 <c:if test="${not empty error}">
@@ -33,7 +32,10 @@
 
 <div class="panel panel-default">
     <div class="panel-body">
-        <div class="alert"><fmt:message key="label.userGroupProvider.delete.confirm"/></div>
+        <h3><fmt:message key="label.userGroupProvider.delete">
+            <fmt:param value="${providerKey}"/>
+        </fmt:message></h3>
+        <div class="alert alert-danger"><fmt:message key="label.userGroupProvider.delete.confirm"/></div>
 
         <form style="margin: 0;" action="${flowExecutionUrl}" method="post" onsubmit="workInProgress('${i18nWaiting}')">
             <input type="hidden" name="providerKey" value="${providerKey}"/>
