@@ -167,7 +167,7 @@
                     <input type="hidden" name="providerName" value="${createConfiguration.value.name}"/>
                     <input type="hidden" name="createJSP" value="${createConfiguration.value.createJSP}"/>
 
-                    <button class="btn btn-default btn-sm btn-primary" type="submit" name="_eventId_createProvider">
+                    <button class="btn btn-default btn-primary" type="submit" name="_eventId_createProvider">
                         <fmt:message key="label.userGroupProvider.create">
                         <fmt:param value="${createConfiguration.value.name}"/>
                     </fmt:message>
@@ -178,4 +178,3 @@
 
     </div>
 </div>
-
