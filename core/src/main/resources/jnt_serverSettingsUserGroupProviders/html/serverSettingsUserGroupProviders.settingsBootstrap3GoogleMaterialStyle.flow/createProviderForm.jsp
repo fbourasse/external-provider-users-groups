@@ -28,7 +28,7 @@
 </div>
 
 <c:if test="${not empty error}">
-    <div class="alert alert-error">${error}</div>
+    <div class="alert alert-danger">${error}</div>
 </c:if>
 <div class="panel panel-default">
     <div class="panel-body">

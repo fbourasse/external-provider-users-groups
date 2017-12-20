@@ -38,7 +38,7 @@
 
 
 <c:forEach var="msg" items="${flowRequestContext.messageContext.allMessages}">
-    <div class="${msg.severity == 'ERROR' ? 'validationError' : ''} alert ${msg.severity == 'ERROR' ? 'alert-error' : 'alert-success'}">
+    <div class="${msg.severity == 'ERROR' ? 'validationError' : ''} alert ${msg.severity == 'ERROR' ? 'alert-danger' : 'alert-success'}">
         <button type="button" class="close" data-dismiss="alert">&times;</button>
             ${fn:escapeXml(msg.text)}</div>
 </c:forEach>
