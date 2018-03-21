@@ -44,6 +44,8 @@
 package org.jahia.test.external.users;
 
 import com.google.common.collect.Sets;
+
+import org.apache.commons.lang.StringUtils;
 import org.jahia.services.content.*;
 import org.jahia.services.content.decorator.JCRGroupNode;
 import org.jahia.services.content.decorator.JCRUserNode;
@@ -57,6 +59,8 @@ import org.junit.Test;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
+
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
@@ -313,5 +317,29 @@ public class ExternalUsersProviderTest extends JahiaTestCase {
         JCRSessionFactory.getInstance().closeAllSessions();
     }
 
+
+    @Test
+    public void accesToUserNodeViaRestApi() throws Exception {
+        login("tata", "password");
+        try {
+            JCRUserNode tata = jahiaUserManagerService.lookupUser("tata");
+            checkAccess("/modules/api/jcr/v1/live/en/paths" + tata.getPath());
+            checkAccess("/modules/api/jcr/v1/default/en/paths" + tata.getPath());
+
+            checkAccess("/modules/api/jcr/v1/live/en/nodes/" + tata.getIdentifier());
+            checkAccess("/modules/api/jcr/v1/default/en/nodes/" + tata.getIdentifier());
+
+            checkAccess("/modules/api/jcr/v1/live/en/nodes/" + tata.getIdentifier() + "/properties");
+            checkAccess("/modules/api/jcr/v1/default/en/nodes/" + tata.getIdentifier() + "/properties");
+        } finally {
+            logout();
+        }
+    }
+
+    private void checkAccess(String url) throws IOException {
+        String out = getAsText(url);
+        assertFalse("Should have access to the URL: " + url,
+                StringUtils.contains(out, "\"exception\":\"javax.jcr.PathNotFoundException\""));
+    }
 
 }
