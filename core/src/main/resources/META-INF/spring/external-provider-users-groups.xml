@@ -24,7 +24,7 @@
   <bean class="org.jahia.services.content.decorator.JCRNodeDecoratorDefinition">
     <property name="decorators">
       <map>
-        <entry key="jnt:externalUser" value="org.jahia.modules.external.users.impl.JCRExternalUserNode"/>
+        <entry key="jnt:externalUser" value="org.jahia.modules.external.users.JCRExternalUserNode"/>
       </map>
     </property>
   </bean>

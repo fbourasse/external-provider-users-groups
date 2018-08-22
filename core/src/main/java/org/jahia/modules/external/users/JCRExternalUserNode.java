@@ -41,10 +41,11 @@
  *     If you are unsure which license is appropriate for your use,
  *     please contact the sales department at sales@jahia.com.
  */
-package org.jahia.modules.external.users.impl;
+package org.jahia.modules.external.users;
 
 import org.jahia.modules.external.ExternalContentStoreProvider;
 import org.jahia.modules.external.ExternalNodeImpl;
+import org.jahia.modules.external.users.impl.UserDataSource;
 import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.decorator.JCRUserNode;
 import org.slf4j.Logger;

@@ -124,7 +124,7 @@ public class ExternalUsersProviderTest extends JahiaTestCase {
     public void testPassword() throws RepositoryException {
         JCRUserNode tata = jahiaUserManagerService.lookupUser("tata");
         assertNotNull("User should exist", tata);
-        assertTrue("User should be external", tata.getClass().getName().equals("org.jahia.modules.external.users.impl.JCRExternalUserNode"));
+        assertTrue("User should be external", tata.getClass().getName().equals("org.jahia.modules.external.users.JCRExternalUserNode"));
         assertTrue(tata.verifyPassword("password"));
     }
 
