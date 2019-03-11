@@ -237,10 +237,12 @@ public class ExternalUserGroupServiceImpl implements ExternalUserGroupService {
 
     @Override
     public synchronized void unregister(String providerKey) {
-        UserGroupProviderRegistration registration = registeredProviders.get(providerKey);
-        stopProvider(registration.getUserProvider());
-        stopProvider(registration.getGroupProvider());
-        registeredProviders.remove(providerKey);
+        final UserGroupProviderRegistration registration = registeredProviders.get(providerKey);
+        if (registration != null) {
+            stopProvider(registration.getUserProvider());
+            stopProvider(registration.getGroupProvider());
+            registeredProviders.remove(providerKey);
+        }
     }
 
     private void stopProvider(JCRStoreProvider provider) {
